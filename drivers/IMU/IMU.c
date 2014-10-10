@@ -20,7 +20,13 @@
 void IMU_Init()
 {
 	// Initialize SPI
-	SPI_Init(IMU_SPI_PORT);
+	if( false == SPI_Init(IMU_SPI_MODULE) )
+	{
+#ifdef DEBUG_CB
+		// Send error message
+		UARTprintf("\nError: SPI Init failed!\n");
+#endif
+	}
 
 	// Initialize MPU9250
 	MPU9250_Init();

@@ -30,6 +30,6 @@ void IMU_Init(void);
 //
 //*****************************************************************************
 
-#define IMU_SPI_PORT				SSI0_BASE					// SPI (SSI) Port that will be used by the IMU
+#define IMU_SPI_MODULE				SPI_MODULE_0				// SPI (SSI) Port that will be used by the IMU
 
 #endif /* IMU_H_ */

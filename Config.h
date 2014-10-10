@@ -58,17 +58,7 @@
 #define MS_CYCLE_COUNT				13320									// Amount of Cycles in a milisecond
 #define DELAY_MS(x)					ROM_SysCtlDelay(MS_CYCLE_COUNT*x)
 
-#define SPI_COMM_LENGTH				8										// Possible values [16] (Pending implementation of 8 Bytes per transaction on SPI_Write)
-#define SPI_COMM_LENGTH_BYTES		(SPI_COMM_LENGTH/8)
-
-#define SPI_MODULE_0				0
-#define SPI_MODULE_1				1
-#define SPI_MODULE_2				2
-#define SPI_MODULE_3				3
-
 #define READ_FLAG   				0x80
-
-#define SPI_DELAY					700
 
 #define MASK_LSB_ON					0x01
 
