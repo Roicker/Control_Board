@@ -68,9 +68,9 @@ bool SPI_Init(uint8_t ui8SPI_Module_Sel)
 		GPIOPinConfigure(GPIO_PA5_SSI0TX);
 		GPIOPinTypeSSI(GPIO_PORTA_BASE,GPIO_PIN_5|GPIO_PIN_4|GPIO_PIN_2);
 
-		//SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_3, SSI_MODE_MASTER, 1000000, SPI_COMM_LENGTH); // Error in SysCtlClockGet on TIVAWARE 2.1.0
+		//SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), IMU_SPI_MODE, SSI_MODE_MASTER, IMU_SPI_BAUDRATE, SPI_COMM_LENGTH); // Error in SysCtlClockGet on TIVAWARE 2.1.0
 		// Config SSI0
-		SSIConfigSetExpClk(SSI0_BASE, SYSCLK, SSI_FRF_MOTO_MODE_3, SSI_MODE_MASTER, 1000000, SPI_COMM_LENGTH);
+		SSIConfigSetExpClk(SSI0_BASE, SYSCLK, IMU_SPI_MODE, SSI_MODE_MASTER, IMU_SPI_BAUDRATE, SPI_COMM_LENGTH);
 
 		// Enable SSI0
 		SSIEnable(SSI0_BASE);
@@ -92,6 +92,52 @@ bool SPI_Init(uint8_t ui8SPI_Module_Sel)
 		break;																	// Use ret to notify that the selected module doesn't exist
 	}
 
+	return ret;
+}
+
+bool SPI_Write(struct SPI_Slave stHandle, uint32_t* ui32WriteBuffer, uint8_t ui8Length)
+{
+	// Init counter for loop
+	uint8_t i = 0;
+
+	// Init return bool var
+	bool ret = false;
+
+	// Check the input parameters - Is the test (0 == stHandle.ui32SPI_BaseAddress) necessary?
+	if( (NULL == ui32WriteBuffer) || (0 == stHandle.ui32SPI_BaseAddress) )
+	{
+#ifdef DEBUG_CB
+		// Send error message
+		UARTprintf("\nError: Input parameters for SPI_Write are invalid\n");
+#endif
+	}
+	else
+	{
+		// Pull CS Line Low
+		GPIOPinWrite(stHandle.ui32SPI_CS_Port , stHandle.ui32SPI_CS_Pin, 0);
+
+		// Loop to send characters (value of ui8Length)
+		for(i = 0; i < ui8Length; i++)
+		{
+			// Write SPI_COMM_LENGTH Bits (Length configured in SPI_Init)
+			SSIDataPut(stHandle.ui32SPI_BaseAddress, ui32WriteBuffer[i]);
+		}
+
+		// Wait for SPI Write to complete (Should this be replaced with Interrupt?? or removed? is SSIDataPut blocking?)
+		while(SSIBusy(stHandle.ui32SPI_BaseAddress))
+		{
+		}
+
+		// Pull CS Line High
+		GPIOPinWrite(stHandle.ui32SPI_CS_Port , stHandle.ui32SPI_CS_Pin, stHandle.ui32SPI_CS_Pin);
+
+		// Delay for the amount of cycles defined in SPI_DELAY - Commented out because each sensor has different timing requirements
+		//SysCtlDelay(SPI_DELAY);
+
+		ret = true;
+	}
+
+	// Return if function call was successful
 	return ret;
 }
 
