@@ -45,4 +45,5 @@ Thumbs.db
 *.xml
 *.mk
 *.pp
+*.launch
 makefile
