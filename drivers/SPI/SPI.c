@@ -29,6 +29,10 @@
 //
 //*****************************************************************************
 
+//*****************************************************************************
+//	SPI_Init
+//*****************************************************************************
+
 bool SPI_Init(uint8_t ui8SPI_Module_Sel)
 {
 	bool ret = false; 															// Init return bool var
@@ -95,7 +99,11 @@ bool SPI_Init(uint8_t ui8SPI_Module_Sel)
 	return ret;
 }
 
-bool SPI_Write(struct SPI_Slave stHandle, uint32_t* ui32WriteBuffer, uint8_t ui8Length)
+//*****************************************************************************
+//	SPI_Write
+//*****************************************************************************
+
+bool SPI_Write(struct SPI_Slave* stHandle, uint32_t* ui32WriteBuffer, uint8_t ui8Length)
 {
 	// Init counter for loop
 	uint8_t i = 0;
@@ -104,7 +112,7 @@ bool SPI_Write(struct SPI_Slave stHandle, uint32_t* ui32WriteBuffer, uint8_t ui8
 	bool ret = false;
 
 	// Check the input parameters - Is the test (0 == stHandle.ui32SPI_BaseAddress) necessary?
-	if( (NULL == ui32WriteBuffer) || (0 == stHandle.ui32SPI_BaseAddress) )
+	if( (NULL == ui32WriteBuffer) || (0 == stHandle->ui32SPI_BaseAddress) )
 	{
 #ifdef DEBUG_CB
 		// Send error message
@@ -114,30 +122,65 @@ bool SPI_Write(struct SPI_Slave stHandle, uint32_t* ui32WriteBuffer, uint8_t ui8
 	else
 	{
 		// Pull CS Line Low
-		GPIOPinWrite(stHandle.ui32SPI_CS_Port , stHandle.ui32SPI_CS_Pin, 0);
+		GPIOPinWrite(stHandle->ui32SPI_CS_Port , stHandle->ui32SPI_CS_Pin, 0);
 
 		// Loop to send characters (value of ui8Length)
 		for(i = 0; i < ui8Length; i++)
 		{
 			// Write SPI_COMM_LENGTH Bits (Length configured in SPI_Init)
-			SSIDataPut(stHandle.ui32SPI_BaseAddress, ui32WriteBuffer[i]);
+			SSIDataPut(stHandle->ui32SPI_BaseAddress, ui32WriteBuffer[i]);
 		}
 
 		// Wait for SPI Write to complete (Should this be replaced with Interrupt?? or removed? is SSIDataPut blocking?)
-		while(SSIBusy(stHandle.ui32SPI_BaseAddress))
+		while(SSIBusy(stHandle->ui32SPI_BaseAddress))
 		{
 		}
 
 		// Pull CS Line High
-		GPIOPinWrite(stHandle.ui32SPI_CS_Port , stHandle.ui32SPI_CS_Pin, stHandle.ui32SPI_CS_Pin);
-
-		// Delay for the amount of cycles defined in SPI_DELAY - Commented out because each sensor has different timing requirements
-		//SysCtlDelay(SPI_DELAY);
+		GPIOPinWrite(stHandle->ui32SPI_CS_Port , stHandle->ui32SPI_CS_Pin, stHandle->ui32SPI_CS_Pin);
 
 		ret = true;
 	}
 
-	// Return if function call was successful
+	// Return value to indicate if function call was successful
+	return ret;
+}
+
+//*****************************************************************************
+//	SPI_ClearFIFO
+//*****************************************************************************
+
+void SPI_ClearFIFO(struct SPI_Slave* stHandle, uint32_t ui32ReadVar)
+{
+	while(SSIDataGetNonBlocking(stHandle->ui32SPI_BaseAddress, &ui32ReadVar))
+	{
+	}
+}
+
+//*****************************************************************************
+//	SPI_ReadFIFO
+//*****************************************************************************
+
+bool SPI_ReadFIFO(struct SPI_Slave* stHandle, uint32_t* ui32ReadBuffer, uint8_t ui8Length)
+{
+	// Init counter for loop
+	uint8_t i = 0;
+
+	// Init return bool var
+	bool ret = true;
+
+	// Read the amount of bytes requested from the FIFO
+	for(i = 0; i < ui8Length; i++)
+	{
+		// Get data from FIFO - if FIFO is empty, the function returns 0
+		if(0 == SSIDataGetNonBlocking(stHandle->ui32SPI_BaseAddress, &ui32ReadBuffer[i]) )
+		{
+			// FIFO is empty
+			ret = false;
+		}
+	}
+
+	// Return variable to signal if function was successful
 	return ret;
 }
 

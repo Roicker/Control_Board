@@ -40,9 +40,9 @@
 
 struct SPI_Slave
 {
-	uint32_t ui32SPI_BaseAddress;
-	uint32_t ui32SPI_CS_Port;
-	uint32_t ui32SPI_CS_Pin;
+	const uint32_t ui32SPI_BaseAddress;
+	const uint32_t ui32SPI_CS_Port;
+	const uint32_t ui32SPI_CS_Pin;
 };
 
 //*****************************************************************************
@@ -52,6 +52,8 @@ struct SPI_Slave
 //*****************************************************************************
 
 bool SPI_Init(uint8_t ui8SPI_Module_Sel);
-bool SPI_Write(struct SPI_Slave stHandle, uint32_t* ui32WriteBuffer, uint8_t ui8Length);
+bool SPI_Write(struct SPI_Slave* stHandle, uint32_t* ui32WriteBuffer, uint8_t ui8Length);
+void SPI_ClearFIFO(struct SPI_Slave* stHandle, uint32_t ui32ReadVar);
+bool SPI_ReadFIFO(struct SPI_Slave* stHandle, uint32_t* ui32ReadBuffer, uint8_t ui8Length);
 
 #endif /* SPI_H_ */

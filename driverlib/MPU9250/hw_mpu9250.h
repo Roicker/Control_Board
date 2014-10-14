@@ -184,7 +184,7 @@
 #define MPU9250_CONFIG_DLPF_CFG_20_10					0x04        //   20 Hz gyro bandwidth,   20 Hz temperature sensor bandwidth
 #define MPU9250_CONFIG_DLPF_CFG_10_10					0x05        //   10 Hz gyro bandwidth,   10 Hz temperature sensor bandwidth
 #define MPU9250_CONFIG_DLPF_CFG_5_5						0x06        //    5 Hz gyro bandwidth,    5 Hz temperature sensor bandwidth
-#define MPU9250_CONFIG_DLPF_CFG_3600_4000				0x06        // 3600 Hz gyro bandwidth, 4000 Hz temperature sensor bandwidth
+#define MPU9250_CONFIG_DLPF_CFG_3600_4000				0x07        // 3600 Hz gyro bandwidth, 4000 Hz temperature sensor bandwidth
 #define MPU9250_CONFIG_DLPF_CFG_S						0
 
 //*****************************************************************************
@@ -1016,7 +1016,8 @@
 #define MPU9250_PWR_MGMT_2_DISABLE_ZA					0x08        // Disable Z-axis accelerometer
 #define MPU9250_PWR_MGMT_2_DISABLE_XG					0x04        // Disable X-axis gyro
 #define MPU9250_PWR_MGMT_2_DISABLE_YG					0x02        // Disable Y-axis gyro
-#define MPU9250_PWR_MGMT_2_DISABLE_ZG					0x01        // Disable Z-axis gyro
+#define MPU9250_PWR_MGMT_2_DISABLE_ZG					0x01		// Disable Z-axis gyro
+#define MPU9250_PWR_MGMT_2_ENABLE_ALL					0x00		// Enable all Accelerometer and Gyro axis
 
 //*****************************************************************************
 //
@@ -1108,5 +1109,16 @@
 //*****************************************************************************
 #define MPU9250_ZA_OFFSET_L_M							0xFE        // FIFO data
 #define MPU9250_ZA_OFFSET_L_S							1
+
+
+//*****************************************************************************
+//
+// The following are defines for the Magnetometer AK8963 that is inside the
+// MPU9250
+//
+//*****************************************************************************
+
+#define AK8963_ADDRESS									0x0C		// Address of sensor AK8963
+
 
 #endif // __SENSORLIB_HW_MPU9250_H__

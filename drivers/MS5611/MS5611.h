@@ -34,5 +34,7 @@
 //*****************************************************************************
 
 void MS5611_Init(void);
+void MS5611_UpdatePressure(void);
+void MS5611_UpdateTemp(void);
 
 #endif /* MS5611_H_ */
