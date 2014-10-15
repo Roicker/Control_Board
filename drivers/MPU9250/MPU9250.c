@@ -30,6 +30,7 @@
 //*****************************************************************************
 
 struct SPI_Slave stMPU9250_Handle = {IMU_SPI_BASE, CS_MPU9250_PORT, CS_MPU9250_PIN};
+struct MPU9250 stMPU9250_Values = {0,0,0,0,0,0,0,0,0};
 
 //*****************************************************************************
 //
@@ -80,7 +81,8 @@ void MPU9250_Init()
 
 	// Send command to read the Device ID of the MPU9250
 	ui32WriteBuffer[0] = MPU9250_O_WHO_AM_I | READ_FLAG;
-	ui32WriteBuffer[1] = 0x00;										// Is this necessary?
+	// Sending 0x00 in second Byte seems to be unnecessary, but better safe than sorry
+	ui32WriteBuffer[1] = 0x00;
 	SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
 
 	// Read Data from RX FIFO
@@ -189,4 +191,289 @@ void MPU9250_Init()
 		UARTprintf("\nError: The Device ID of sensor MPU9250 is not 0x71\n");
 #endif
 	}
+}
+
+void MPU9250_UpdateAccel()
+{
+	// Arrays to hold the data to be written or read via SPI
+	uint32_t ui32WriteBuffer[2] = {0,0};
+	uint32_t ui32ReadBuffer[2] = {0,0};
+
+	// Clear FIFO
+	SPI_ClearFIFO(&stMPU9250_Handle, ui32ReadBuffer[0]);
+
+	//
+	// Update ACCEL X
+	//
+
+	// Send command to read ACCEL X MSB
+	ui32WriteBuffer[0] = MPU9250_O_ACCEL_XOUT_H | READ_FLAG;
+	SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
+
+	// Read Data from RX FIFO
+	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
+	{
+#ifdef DEBUG_CB
+		// Send error message
+		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
+#endif
+	}
+	else
+	{
+		stMPU9250_Values.ACCEL.x = ui32ReadBuffer[1] << 8;
+	}
+
+	// Delay between SPI Operations
+	SysCtlDelay(SPI_DELAY);
+
+	// Send command to read ACCEL X LSB
+	ui32WriteBuffer[0] = MPU9250_O_ACCEL_XOUT_L | READ_FLAG;
+	SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
+
+	// Read Data from RX FIFO
+	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
+	{
+#ifdef DEBUG_CB
+		// Send error message
+		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
+#endif
+	}
+	else
+	{
+		stMPU9250_Values.ACCEL.x |= ui32ReadBuffer[1];
+	}
+
+	// Delay between SPI Operations
+	SysCtlDelay(SPI_DELAY);
+
+	//
+	// Update ACCEL Y
+	//
+
+	// Send command to read ACCEL Y MSB
+	ui32WriteBuffer[0] = MPU9250_O_ACCEL_YOUT_H | READ_FLAG;
+	SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
+
+	// Read Data from RX FIFO
+	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
+	{
+#ifdef DEBUG_CB
+		// Send error message
+		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
+#endif
+	}
+	else
+	{
+		stMPU9250_Values.ACCEL.y = ui32ReadBuffer[1] << 8;
+	}
+
+	// Delay between SPI Operations
+	SysCtlDelay(SPI_DELAY);
+
+	// Send command to read ACCEL Y LSB
+	ui32WriteBuffer[0] = MPU9250_O_ACCEL_YOUT_L | READ_FLAG;
+	SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
+
+	// Read Data from RX FIFO
+	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
+	{
+#ifdef DEBUG_CB
+		// Send error message
+		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
+#endif
+	}
+	else
+	{
+		stMPU9250_Values.ACCEL.y |= ui32ReadBuffer[1];
+	}
+
+	// Delay between SPI Operations
+	SysCtlDelay(SPI_DELAY);
+
+	//
+	// Update ACCEL Z
+	//
+
+	// Send command to read ACCEL Z MSB
+	ui32WriteBuffer[0] = MPU9250_O_ACCEL_ZOUT_H | READ_FLAG;
+	SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
+
+	// Read Data from RX FIFO
+	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
+	{
+#ifdef DEBUG_CB
+		// Send error message
+		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
+#endif
+	}
+	else
+	{
+		stMPU9250_Values.ACCEL.z = ui32ReadBuffer[1] << 8;
+	}
+
+	// Delay between SPI Operations
+	SysCtlDelay(SPI_DELAY);
+
+	// Send command to read ACCEL Z LSB
+	ui32WriteBuffer[0] = MPU9250_O_ACCEL_ZOUT_L | READ_FLAG;
+	SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
+
+	// Read Data from RX FIFO
+	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
+	{
+#ifdef DEBUG_CB
+		// Send error message
+		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
+#endif
+	}
+	else
+	{
+		stMPU9250_Values.ACCEL.z |= ui32ReadBuffer[1];
+	}
+
+	// Delay between SPI Operations
+	SysCtlDelay(SPI_DELAY);
+}
+
+void MPU9250_UpdateGyro()
+{
+	// Arrays to hold the data to be written or read via SPI
+	uint32_t ui32WriteBuffer[2] = {0,0};
+	uint32_t ui32ReadBuffer[2] = {0,0};
+
+	// Clear FIFO
+	SPI_ClearFIFO(&stMPU9250_Handle, ui32ReadBuffer[0]);
+
+	//
+	// Update GYRO X
+	//
+
+	// Send command to read GYRO X MSB
+	ui32WriteBuffer[0] = MPU9250_O_GYRO_XOUT_H | READ_FLAG;
+	SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
+
+	// Read Data from RX FIFO
+	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
+	{
+#ifdef DEBUG_CB
+		// Send error message
+		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
+#endif
+	}
+	else
+	{
+		stMPU9250_Values.GYRO.x = ui32ReadBuffer[1] << 8;
+	}
+
+	// Delay between SPI Operations
+	SysCtlDelay(SPI_DELAY);
+
+	// Send command to read GYRO X LSB
+	ui32WriteBuffer[0] = MPU9250_O_GYRO_XOUT_L | READ_FLAG;
+	SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
+
+	// Read Data from RX FIFO
+	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
+	{
+#ifdef DEBUG_CB
+		// Send error message
+		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
+#endif
+	}
+	else
+	{
+		stMPU9250_Values.GYRO.x |= ui32ReadBuffer[1];
+	}
+
+	// Delay between SPI Operations
+	SysCtlDelay(SPI_DELAY);
+
+	//
+	// Update GYRO Y
+	//
+
+	// Send command to read GYRO Y MSB
+	ui32WriteBuffer[0] = MPU9250_O_GYRO_YOUT_H | READ_FLAG;
+	SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
+
+	// Read Data from RX FIFO
+	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
+	{
+#ifdef DEBUG_CB
+		// Send error message
+		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
+#endif
+	}
+	else
+	{
+		stMPU9250_Values.GYRO.y = ui32ReadBuffer[1] << 8;
+	}
+
+	// Delay between SPI Operations
+	SysCtlDelay(SPI_DELAY);
+
+	// Send command to read GYRO Y LSB
+	ui32WriteBuffer[0] = MPU9250_O_GYRO_YOUT_L | READ_FLAG;
+	SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
+
+	// Read Data from RX FIFO
+	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
+	{
+#ifdef DEBUG_CB
+		// Send error message
+		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
+#endif
+	}
+	else
+	{
+		stMPU9250_Values.GYRO.y |= ui32ReadBuffer[1];
+	}
+
+	// Delay between SPI Operations
+	SysCtlDelay(SPI_DELAY);
+
+
+	//
+	// Update GYRO Z
+	//
+
+	// Send command to read GYRO Z MSB
+	ui32WriteBuffer[0] = MPU9250_O_GYRO_ZOUT_H | READ_FLAG;
+	SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
+
+	// Read Data from RX FIFO
+	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
+	{
+#ifdef DEBUG_CB
+		// Send error message
+		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
+#endif
+	}
+	else
+	{
+		stMPU9250_Values.GYRO.z = ui32ReadBuffer[1] << 8;
+	}
+
+	// Delay between SPI Operations
+	SysCtlDelay(SPI_DELAY);
+
+	// Send command to read GYRO Z LSB
+	ui32WriteBuffer[0] = MPU9250_O_GYRO_ZOUT_L | READ_FLAG;
+	SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
+
+	// Read Data from RX FIFO
+	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
+	{
+#ifdef DEBUG_CB
+		// Send error message
+		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
+#endif
+	}
+	else
+	{
+		stMPU9250_Values.GYRO.z |= ui32ReadBuffer[1];
+	}
+
+	// Delay between SPI Operations
+	SysCtlDelay(SPI_DELAY);
 }

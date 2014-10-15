@@ -48,8 +48,6 @@ bool SYS_Init(void)
 	// Init IMU
 	IMU_Init();
 
-	//ret = false; // test
-
 	return ret;
 }
 
@@ -104,13 +102,11 @@ int main(void)
 		{
 			// Error! Blink RED Led
 			ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, GPIO_PIN_1);
-			// Delay for 2 M Cycles
-			//ROM_SysCtlDelay(2000000);
+			// Delay for 250 ms
 			DELAY_MS(500);
 			// Error! Blink RED Led
 			ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);
-			// Delay for 50 M Cycles
-			//ROM_SysCtlDelay(50000000);
+			// Delay for 1500 ms
 			DELAY_MS(3000);
 		}
 	}
@@ -124,7 +120,8 @@ int main(void)
 
 	while(1)
 	{
-
+		IMU_UpdateValues();
+		DELAY_MS(1000);
 	}
 
 	// Unreachable return

@@ -29,10 +29,46 @@
 
 //*****************************************************************************
 //
+//		Structures
+//
+//*****************************************************************************
+
+struct Accelerometer
+{
+	int16_t x;
+	int16_t y;
+	int16_t z;
+};
+
+struct Gyroscope
+{
+	int16_t x;
+	int16_t y;
+	int16_t z;
+};
+
+struct Magnetometer
+{
+	int16_t x;
+	int16_t y;
+	int16_t z;
+};
+
+struct MPU9250
+{
+	struct Accelerometer ACCEL;
+	struct Gyroscope GYRO;
+	struct Magnetometer MAG;
+};
+
+//*****************************************************************************
+//
 //		Function Prototypes
 //
 //*****************************************************************************
 
 void MPU9250_Init(void);
+void MPU9250_UpdateAccel(void);
+void MPU9250_UpdateGyro(void);
 
 #endif /* MPU9250_H_ */
