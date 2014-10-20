@@ -66,7 +66,7 @@ void IMU_UpdateValues()
 	// Print IMU Variable Values
 
 	// MPU9250 Values
-	UARTprintf("\n MPU9250 \n ACCEL - X: %d  Y: %d  Z: %d", stMPU9250_Values.ACCEL.x, stMPU9250_Values.ACCEL.y, stMPU9250_Values.ACCEL.z);
+	UARTprintf("\n\n MPU9250 \n ACCEL - X: %d  Y: %d  Z: %d", stMPU9250_Values.ACCEL.x, stMPU9250_Values.ACCEL.y, stMPU9250_Values.ACCEL.z);
 	UARTprintf("\n GYRO  - X: %d  Y: %d  Z: %d", stMPU9250_Values.GYRO.x, stMPU9250_Values.GYRO.y, stMPU9250_Values.GYRO.z);
 	UARTprintf("\n MAG   - X: %d  Y: %d  Z: %d", stMPU9250_Values.MAG.x, stMPU9250_Values.MAG.y, stMPU9250_Values.MAG.z);
 

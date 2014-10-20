@@ -19,6 +19,7 @@
 #include <stddef.h>
 #include "inc/hw_memmap.h"
 #include "inc/hw_ssi.h"
+#include "inc/hw_ints.h"
 #include "inc/hw_types.h"
 #include "driverlib/pin_map.h"
 
@@ -33,6 +34,7 @@
 #include "drivers/MPU9250/MPU9250.h"
 #include "drivers/MS5611/MS5611.h"
 #include "drivers/SPI/SPI.h"
+#include "drivers/StepperMotor/STEP.h"
 
 // Driverlib
 #include "driverlib/MPU9250/hw_mpu9250.h"
@@ -57,6 +59,8 @@
 #define INTOSCLK					16000000								// Internal Oscillator Frequency
 #define MS_CYCLE_COUNT				13320									// Amount of Cycles in a milisecond
 #define DELAY_MS(x)					SysCtlDelay(MS_CYCLE_COUNT*x)
+#define UART_RX_BUFFER_SIZE			50										// Amount of characters be stored in RX Buffer
+#define CARRIAGE_RETURN				0x0D									// ASCII Value of Enter Key
 
 #define READ_FLAG   				0x80
 
