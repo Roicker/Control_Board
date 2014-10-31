@@ -23,9 +23,9 @@
 //*****************************************************************************
 
 // CS Line Config for MS5611
-#define CS_MS5611_PERIPH					SYSCTL_PERIPH_GPIOB						// Intentify on which Peripheral is the CS line of the MS5611
-#define CS_MS5611_PORT						GPIO_PORTB_BASE							// Intentify on which Port is the CS line of the MS5611
-#define CS_MS5611_PIN						GPIO_PIN_6								// Intentify on which Pin is the CS line of the MS5611
+#define CS_MS5611_PERIPH					SYSCTL_PERIPH_GPIOE						// Intentify on which Peripheral is the CS line of the MS5611
+#define CS_MS5611_PORT						GPIO_PORTE_BASE							// Intentify on which Port is the CS line of the MS5611
+#define CS_MS5611_PIN						GPIO_PIN_1								// Intentify on which Pin is the CS line of the MS5611
 
 // MS5611 Registers
 #define MS5611_RESET						0x1E									// MS5611 Reset
@@ -65,12 +65,12 @@ struct MS5611
 {
 	uint32_t Pressure;
 	uint32_t Temperature;
-	uint16_t Pressure_Sens;
-	uint16_t Pressure_Offset;
-	uint16_t Temp_CS;
-	uint16_t Temp_CO;
-	uint16_t Temp_Reference;
-	uint16_t Temp_Sens;
+	uint16_t PressureSens;
+	uint16_t PressureOffset;
+	uint16_t TempCS;
+	uint16_t TempCO;
+	uint16_t TempReference;
+	uint16_t TempSens;
 	uint16_t CRC;
 };
 

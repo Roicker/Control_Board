@@ -23,10 +23,10 @@
 //
 //*****************************************************************************
 
-int main(void);
+void main(void);
 bool SYS_Init(void);
 void UART_Init(void);
-void GPIO_Init(void);
-
+void LED_Init(void);
+void UART_IntHandler(void);
 
 #endif /* MAIN_H_ */

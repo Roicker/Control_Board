@@ -1,12 +1,12 @@
 /*
- * IMU.h
+ * TIMER.h
  *
- *  Created on: 09/10/2014
+ *  Created on: 29/10/2014
  *      Author: Ray
  */
 
-#ifndef IMU_H_
-#define IMU_H_
+#ifndef TIMER_H_
+#define TIMER_H_
 
 //*****************************************************************************
 //
@@ -14,6 +14,7 @@
 //
 //*****************************************************************************
 
+// System Configuration
 #include "Config.h"
 
 //*****************************************************************************
@@ -22,18 +23,17 @@
 //
 //*****************************************************************************
 
-#define IMU_SPI_MODULE				SPI_MODULE_1				// SPI (SSI) Port that will be used by the IMU - This should be modified toghether with IMU_SPI_BASE
-#define IMU_SPI_BASE				SSI1_BASE					// SPI Module Base - This should be modified toghether with IMU_SPI_MODULE
-#define IMU_SPI_MODE				SSI_FRF_MOTO_MODE_3			// Select SPI Mode - 0 or 3 for the MS5611 and MPU9250
-#define IMU_SPI_BAUDRATE			1000000						// SPI Communication Baudrate for IMU
+#define TIMER_1_uSEC							79										// Number of timer counts needed to reach 1 usec
+#define TIMER_1_mSEC							79999									// Number of timer counts needed to reach 1 msec
+#define TIMER_1_TRIGGER_OVERHEAD				120										// Amount of cycles required for code processing of the trigger pin
 
 //*****************************************************************************
 //
-//		Function Prototypes
+//		Function Protoypes
 //
 //*****************************************************************************
 
-void IMU_Init(void);
-void IMU_UpdateValues(void);
+void TIMER_Init(void);
+void TIMER_IntHandler1(void);
 
-#endif /* IMU_H_ */
+#endif /* TIMER_H_ */

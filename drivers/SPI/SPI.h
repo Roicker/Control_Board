@@ -41,8 +41,8 @@
 struct SPI_Slave
 {
 	const uint32_t ui32SPI_BaseAddress;
-	const uint32_t ui32SPI_CS_Port;
-	const uint32_t ui32SPI_CS_Pin;
+	const uint32_t ui32SPI_CSPort;
+	const uint32_t ui32SPI_CSPin;
 };
 
 //*****************************************************************************

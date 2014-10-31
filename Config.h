@@ -21,6 +21,7 @@
 #include "inc/hw_ssi.h"
 #include "inc/hw_ints.h"
 #include "inc/hw_types.h"
+#include "inc/hw_gpio.h"
 #include "driverlib/pin_map.h"
 
 //*****************************************************************************
@@ -35,6 +36,8 @@
 #include "drivers/MS5611/MS5611.h"
 #include "drivers/SPI/SPI.h"
 #include "drivers/StepperMotor/STEP.h"
+#include "drivers/Distance/DIST.h"
+#include "drivers/Timer/TIMER.h"
 
 // Driverlib
 #include "driverlib/MPU9250/hw_mpu9250.h"
@@ -45,6 +48,7 @@
 #include "driverlib/UART/uart.h"
 #include "driverlib/SysCtl/sysctl.h"
 #include "driverlib/Interrupt/interrupt.h"
+#include "driverlib/timer/timer.h"
 
 // Utils
 #include "utils/uartstdio.h"

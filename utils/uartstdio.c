@@ -151,9 +151,9 @@ static const char * const g_pcHex = "0123456789abcdef";
 // The list of possible base addresses for the console UART.
 //
 //*****************************************************************************
-static const uint32_t g_ui32UARTBase[3] =
+static const uint32_t g_ui32UARTBase[8] =
 {
-    UART0_BASE, UART1_BASE, UART2_BASE
+    UART0_BASE, UART1_BASE, UART2_BASE, UART3_BASE, UART4_BASE, UART5_BASE, UART6_BASE, UART7_BASE
 };
 
 #ifdef UART_BUFFERED
@@ -180,9 +180,9 @@ static uint32_t g_ui32PortNum;
 // The list of UART peripherals.
 //
 //*****************************************************************************
-static const uint32_t g_ui32UARTPeriph[3] =
+static const uint32_t g_ui32UARTPeriph[8] =
 {
-    SYSCTL_PERIPH_UART0, SYSCTL_PERIPH_UART1, SYSCTL_PERIPH_UART2
+    SYSCTL_PERIPH_UART0, SYSCTL_PERIPH_UART1, SYSCTL_PERIPH_UART2, SYSCTL_PERIPH_UART3, SYSCTL_PERIPH_UART4, SYSCTL_PERIPH_UART5, SYSCTL_PERIPH_UART6, SYSCTL_PERIPH_UART7
 };
 
 //*****************************************************************************
@@ -350,7 +350,9 @@ UARTStdioConfig(uint32_t ui32PortNum, uint32_t ui32Baud, uint32_t ui32SrcClock)
     // Check the arguments.
     //
     ASSERT((ui32PortNum == 0) || (ui32PortNum == 1) ||
-           (ui32PortNum == 2));
+           (ui32PortNum == 2) || (ui32PortNum == 3) ||
+           (ui32PortNum == 4) || (ui32PortNum == 5) ||
+           (ui32PortNum == 6) || (ui32PortNum == 7));
 
 #ifdef UART_BUFFERED
     //

@@ -9,7 +9,7 @@
 // THIS SOFTWARE IS PROVIDED "AS IS" AND WITH ALL FAULTS.
 // NO WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT
 // NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE. TI SHALL NOT, UNDER ANY
+// A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE. WE SHALL NOT, UNDER ANY
 // CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
 // DAMAGES, FOR ANY REASON WHATSOEVER.
 //
@@ -43,7 +43,7 @@ bool SPI_Init(uint8_t ui8SPI_Module_Sel)
 		// Enable SSI0
 		SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
 
-		// Enable Port A for SPI
+		// Enable Peripheral (Port A) for SPI
 		SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
 
 		// Enable Peripheral for MS5611 if it has not been activated
@@ -83,11 +83,52 @@ bool SPI_Init(uint8_t ui8SPI_Module_Sel)
 		ret = true;
 		break;
 	case SPI_MODULE_1:
-		// If needed, other SPI Modules (1, 2 or 3) can be configured. This proyect uses the Module 0 for the IMU.
+		// Enable SSI1
+		SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI1);
+
+		// Enable Port D for SPI
+		SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+
+		// Enable Peripheral for MS5611 if it has not been activated
+		if(CS_MS5611_PERIPH != SYSCTL_PERIPH_GPIOD)
+		{
+			SysCtlPeripheralEnable(CS_MS5611_PERIPH);
+		}
+
+		// Enable Peripheral for MPU9250 if it has not been activated
+		if( (CS_MPU9250_PERIPH != SYSCTL_PERIPH_GPIOD) && (CS_MPU9250_PERIPH != CS_MS5611_PERIPH) )
+		{
+			SysCtlPeripheralEnable(CS_MPU9250_PERIPH);
+		}
+
+		// Init CS Line MS5611
+		GPIOPinTypeGPIOOutput(CS_MS5611_PORT, CS_MS5611_PIN);
+
+		// Init CS Line MPU9250
+		GPIOPinTypeGPIOOutput(CS_MPU9250_PORT, CS_MPU9250_PIN);
+
+		// Config Interrupt pin for MPU9250?
+
+		// Config SSI1 Pins
+		GPIOPinConfigure(GPIO_PD0_SSI1CLK);
+		GPIOPinConfigure(GPIO_PD2_SSI1RX);
+		GPIOPinConfigure(GPIO_PD3_SSI1TX);
+		GPIOPinTypeSSI(GPIO_PORTD_BASE,GPIO_PIN_3|GPIO_PIN_2|GPIO_PIN_0);
+
+		//SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), IMU_SPI_MODE, SSI_MODE_MASTER, IMU_SPI_BAUDRATE, SPI_COMM_LENGTH); // Error in SysCtlClockGet on TIVAWARE 2.1.0
+		// Config SSI1
+		SSIConfigSetExpClk(SSI1_BASE, SYSCLK, IMU_SPI_MODE, SSI_MODE_MASTER, IMU_SPI_BAUDRATE, SPI_COMM_LENGTH);
+
+		// Enable SSI1
+		SSIEnable(SSI1_BASE);
+
+		// Indicate that the initialization was performed correctly
+		ret = true;
+		break;
 	case SPI_MODULE_2:
-		// If needed, other SPI Modules (1, 2 or 3) can be configured. This proyect uses the Module 0 for the IMU.
+		// If needed, other SPI Modules (2 or 3) can be configured. This proyect uses the Module 1 (previously 0) for the IMU.
 	case SPI_MODULE_3:
-		// If needed, other SPI Modules (1, 2 or 3) can be configured. This proyect uses the Module 0 for the IMU.
+		// If needed, other SPI Modules (2 or 3) can be configured. This proyect uses the Module 1 (previously 0) for the IMU.
 	default:
 #ifdef DEBUG_CB
 		// Send error message
@@ -122,7 +163,7 @@ bool SPI_Write(struct SPI_Slave* stDeviceHandle, uint32_t* ui32WriteBuffer, uint
 	else
 	{
 		// Pull CS Line Low
-		GPIOPinWrite(stDeviceHandle->ui32SPI_CS_Port, stDeviceHandle->ui32SPI_CS_Pin, 0);
+		GPIOPinWrite(stDeviceHandle->ui32SPI_CSPort, stDeviceHandle->ui32SPI_CSPin, 0);
 
 		// Loop to send characters (value of ui8Length)
 		for(i = 0; i < ui8Length; i++)
@@ -137,7 +178,7 @@ bool SPI_Write(struct SPI_Slave* stDeviceHandle, uint32_t* ui32WriteBuffer, uint
 		}
 
 		// Pull CS Line High
-		GPIOPinWrite(stDeviceHandle->ui32SPI_CS_Port, stDeviceHandle->ui32SPI_CS_Pin, stDeviceHandle->ui32SPI_CS_Pin);
+		GPIOPinWrite(stDeviceHandle->ui32SPI_CSPort, stDeviceHandle->ui32SPI_CSPin, stDeviceHandle->ui32SPI_CSPin);
 
 		ret = true;
 	}

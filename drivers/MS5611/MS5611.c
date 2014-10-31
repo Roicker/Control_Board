@@ -9,7 +9,7 @@
 // THIS SOFTWARE IS PROVIDED "AS IS" AND WITH ALL FAULTS.
 // NO WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT
 // NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE. TI SHALL NOT, UNDER ANY
+// A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE. WE SHALL NOT, UNDER ANY
 // CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
 // DAMAGES, FOR ANY REASON WHATSOEVER.
 //
@@ -91,12 +91,12 @@ void MS5611_Init()
 	}
 
 	// Store calibration parameters
-	stMS5611_Values.Pressure_Sens = ui16TempVar[0];
-	stMS5611_Values.Pressure_Offset = ui16TempVar[1];
-	stMS5611_Values.Temp_CS = ui16TempVar[2];
-	stMS5611_Values.Temp_CO = ui16TempVar[3];
-	stMS5611_Values.Temp_Reference = ui16TempVar[4];
-	stMS5611_Values.Temp_Sens = ui16TempVar[5];
+	stMS5611_Values.PressureSens = ui16TempVar[0];
+	stMS5611_Values.PressureOffset = ui16TempVar[1];
+	stMS5611_Values.TempCS = ui16TempVar[2];
+	stMS5611_Values.TempCO = ui16TempVar[3];
+	stMS5611_Values.TempReference = ui16TempVar[4];
+	stMS5611_Values.TempSens = ui16TempVar[5];
 	stMS5611_Values.CRC = ui16TempVar[6];
 }
 
