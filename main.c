@@ -55,6 +55,10 @@ extern struct STEP_Motor stRight_Handle;
 //
 //*****************************************************************************
 
+//*****************************************************************************
+//		UART_IntHandler
+//*****************************************************************************
+
 void UART_IntHandler(void)
 {
 	// Variable to store interrupt status
@@ -94,9 +98,7 @@ void UART_IntHandler(void)
 }
 
 //*****************************************************************************
-//
-//		Init Functions
-//
+//		SYS_Init
 //*****************************************************************************
 
 bool SYS_Init(void)
@@ -134,10 +136,14 @@ bool SYS_Init(void)
 	TIMER_Init();
 
 	// Enable processor interrupts
-	IntMasterEnable();
+	ROM_IntMasterEnable();
 
 	return ret;
 }
+
+//*****************************************************************************
+//		UART_Init
+//*****************************************************************************
 
 void UART_Init(void)
 {
@@ -158,17 +164,6 @@ void UART_Init(void)
 
 	// Enable UART 5
 	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART5);
-
-	// Configure A.0 and A.1 as RX and TX of UART 0
-	ROM_GPIOPinConfigure(GPIO_PA0_U0RX);
-	ROM_GPIOPinConfigure(GPIO_PA1_U0TX);
-	ROM_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
-
-    // Use the Internal Oscillator as the UART clock source.
-	ROM_UARTClockSourceSet(UART0_BASE, UART_CLOCK_PIOSC);
-
-	// Init the UART utilities (UART0, Baudrate 115,200 and UART CLK = Internal Oscillator)
-	UARTStdioConfig(0, 115200, INTOSCLK);
 
 	// Configure B.0 and B.1 as RX and TX of UART 1
 	ROM_GPIOPinConfigure(GPIO_PB0_U1RX);
@@ -192,12 +187,29 @@ void UART_Init(void)
 	// Init the UART utilities (UART5, Baudrate 115,200 and UART CLK = Internal Oscillator)
 	UARTStdioConfig(5, 115200, INTOSCLK);
 
+	// IMPORTANT! UART 0 Must be the last one to be configured in order for UARTPrintf to be directed to UART 0
+
+	// Configure A.0 and A.1 as RX and TX of UART 0
+	ROM_GPIOPinConfigure(GPIO_PA0_U0RX);
+	ROM_GPIOPinConfigure(GPIO_PA1_U0TX);
+	ROM_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+
+	// Use the Internal Oscillator as the UART clock source.
+	ROM_UARTClockSourceSet(UART0_BASE, UART_CLOCK_PIOSC);
+
+	// Init the UART utilities (UART0, Baudrate 115,200 and UART CLK = Internal Oscillator)
+	UARTStdioConfig(0, 115200, INTOSCLK);
+
 	// Enable the UART interrupt
 	IntEnable(INT_UART0);
 
 	// Enable RX and TX interrupts only
 	UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
 }
+
+//*****************************************************************************
+//		LED_Init
+//*****************************************************************************
 
 void LED_Init(void)
 {
@@ -211,9 +223,7 @@ void LED_Init(void)
 }
 
 //*****************************************************************************
-//
 //		Main Function
-//
 //*****************************************************************************
 
 void main(void)
@@ -244,77 +254,85 @@ void main(void)
 		UARTprintf("\nInit Successful!\n");
 #endif
 	}
-
+#ifdef DEBUG_CB
 	// Init Console
-	UARTprintf("\nSelect desired command:\n 1 - Enable/Disable Right Stepper\n 2 - Enable/Disable Left Stepper\n 3 - Reverse Right Stepper\n 4 - Reverse Left Stepper\n 5 - Read RAW IMU Values\n 6 - Enable SM Driver\n 7 - Disable SM Driver\n\nCommand: ");
+	UARTprintf("\nSelect desired command:\n 1 - Enable/Disable Right Stepper\n 2 - Enable/Disable Left Stepper\n 3 - Reverse Right Stepper\n 4 - Reverse Left Stepper\n 5 - Read RAW IMU Values\n 6 - Enable SM Driver\n 7 - Disable SM Driver\n 8 - Read Distance\n\nCommand: ");
 
+	// Main Loop
 	while(1)
 	{
-		// If characters are available, call function to process the data
-		if(bUART_StringAvailable)
-		{
-			// UART Function that processes the received command
-			UART_Comm();
-		}
-
-/*		cUARTDataTX = 0;
-
-		UARTCharPutNonBlocking(UART1_BASE, cUARTDataTX);
-
-		cUARTDataRX = UARTCharGetNonBlocking(UART5_BASE);
-
-		if( 0 == cUARTDataRX )
-		{
-			// Blink LED - Blue
-			ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2);
-		}
-
-		DELAY_MS(1000);
-
-		cUARTDataTX = 1;
-
-		UARTCharPutNonBlocking(UART5_BASE, cUARTDataTX);
-
-		cUARTDataRX = UARTCharGetNonBlocking(UART1_BASE);
-
-		if( 1 == cUARTDataRX )
-		{
-			// Blink LED - Green?
-			ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0);
-		}
-
-		DELAY_MS(1000);*/
-
-		// Cyclic operations
-
-		// Measure distance
-		DIST_UpdateDistance();
-
-		DELAY_MS(1000);
-
-		// Right Stepper Motor
-		if(bUART_RSM_Enabled)
-		{
-			// Move 1 Step
-			STEP_Move(&stRight_Handle);
-		}
-
-		// Left Stepper Motor
-		if(bUART_LSM_Enabled)
-		{
-			// Move 1 Step
-			STEP_Move(&stLeft_Handle);
-		}
-
-		// Delay
-		SysCtlDelay(STEP_DELAY);
+		// Call test routine
+		TEST_main();
+#endif
 	}
 }
 
+
 //*****************************************************************************
-//
-//		UART Communication
-//
+//		TEST_main
+//*****************************************************************************
+
+void TEST_main(void)
+{
+	// If characters are available, call function to process the data
+	if(bUART_StringAvailable)
+	{
+		// UART Function that processes the received command
+		UART_Comm();
+	}
+
+	cUARTDataTX = 0;
+
+	UARTCharPutNonBlocking(UART1_BASE, cUARTDataTX);
+
+	cUARTDataRX = UARTCharGetNonBlocking(UART5_BASE);
+
+	if( 0 == cUARTDataRX )
+	{
+		// Blink LED - Blue
+		ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2);
+	}
+
+	DELAY_MS(1000);
+
+	cUARTDataTX = 1;
+
+	UARTCharPutNonBlocking(UART5_BASE, cUARTDataTX);
+
+	cUARTDataRX = UARTCharGetNonBlocking(UART1_BASE);
+
+	if( 1 == cUARTDataRX )
+	{
+		// Blink LED - Green?
+		ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0);
+	}
+
+	//DELAY_MS(1000);
+
+	// Cyclic operations
+
+	DELAY_MS(1000);
+
+	// Right Stepper Motor
+	if(bUART_RSM_Enabled)
+	{
+		// Move 1 Step
+		STEP_Move(&stRight_Handle);
+	}
+
+	// Left Stepper Motor
+	if(bUART_LSM_Enabled)
+	{
+		// Move 1 Step
+		STEP_Move(&stLeft_Handle);
+	}
+
+	// Delay
+	SysCtlDelay(STEP_DELAY);
+}
+
+//*****************************************************************************
+//		UART_Communication
 //*****************************************************************************
 
 void UART_Comm()
@@ -380,6 +398,15 @@ void UART_Comm()
 	case 0x37:
 		// Disable Stepper Motors
 		STEP_Disable();
+		// New line
+		UARTprintf("\nCommand: ");
+		// Prepare for next command
+		ui8UART_RX_Pointer_Start = ui8UART_RX_Pointer_End;
+		break;
+		// Command 8
+	case 0x38:
+		// Measure distance
+		DIST_UpdateDistance();
 		// New line
 		UARTprintf("\nCommand: ");
 		// Prepare for next command

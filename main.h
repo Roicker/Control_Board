@@ -26,7 +26,9 @@
 void main(void);
 bool SYS_Init(void);
 void UART_Init(void);
+void UART_Comm(void);
 void LED_Init(void);
 void UART_IntHandler(void);
+void TEST_main(void);
 
 #endif /* MAIN_H_ */

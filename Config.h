@@ -17,11 +17,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <math.h>
 #include "inc/hw_memmap.h"
 #include "inc/hw_ssi.h"
 #include "inc/hw_ints.h"
 #include "inc/hw_types.h"
 #include "inc/hw_gpio.h"
+#include "inc/hw_timer.h"
 #include "driverlib/pin_map.h"
 
 //*****************************************************************************
@@ -65,6 +67,7 @@
 #define DELAY_MS(x)					SysCtlDelay(MS_CYCLE_COUNT*x)
 #define UART_RX_BUFFER_SIZE			50										// Amount of characters be stored in RX Buffer
 #define CARRIAGE_RETURN				0x0D									// ASCII Value of Enter Key
+#define CYCLE_TIME					(float)0.0000000125						// Duration of 1 Clock cycle
 
 #define READ_FLAG   				0x80
 
