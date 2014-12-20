@@ -251,7 +251,7 @@ void main(void)
 	{
 #ifdef DEBUG_CB
 		// Send success message
-		UARTprintf("\nInit Successful!\n");
+		UARTprintf("\n\nInit Successful!\n");
 #endif
 	}
 #ifdef DEBUG_CB
@@ -293,7 +293,7 @@ void TEST_main(void)
 		ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2);
 	}
 
-	DELAY_MS(1000);
+	//DELAY_MS(1000);
 
 	cUARTDataTX = 1;
 
@@ -311,7 +311,7 @@ void TEST_main(void)
 
 	// Cyclic operations
 
-	DELAY_MS(1000);
+	//DELAY_MS(1000);
 
 	// Right Stepper Motor
 	if(bUART_RSM_Enabled)

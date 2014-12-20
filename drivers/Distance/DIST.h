@@ -22,11 +22,11 @@
 //
 //*****************************************************************************
 
-#define DIST_S1_PERIPH							SYSCTL_PERIPH_GPIOB						// Intentify on which Peripheral is the control of the Ultrasonic Distance Sensor 1
-#define DIST_S1_PORT							GPIO_PORTB_BASE							// Intentify on which Port is the control of the Ultrasonic Distance Sensor 1
-#define DIST_S1_TRIGGER							GPIO_PIN_2								// Intentify on which Pin is the control of the Ultrasonic Distance Sensor 1
-#define DIST_S1_ECHO							GPIO_PIN_3								// Intentify on which Pin is the control of the Ultrasonic Distance Sensor 1
-#define DIST_S1_INT								INT_GPIOB								// Intentify on which Peripheral is the interrupt of the Ultrasonic Distance Sensor 1
+#define DIST_S1_PERIPH							SYSCTL_PERIPH_GPIOD						// Intentify on which Peripheral is the control of the Ultrasonic Distance Sensor 1
+#define DIST_S1_PORT							GPIO_PORTD_BASE							// Intentify on which Port is the control of the Ultrasonic Distance Sensor 1
+#define DIST_S1_TRIGGER							GPIO_PIN_6								// Intentify on which Pin is the control of the Ultrasonic Distance Sensor 1
+#define DIST_S1_ECHO							GPIO_PIN_7								// Intentify on which Pin is the control of the Ultrasonic Distance Sensor 1
+#define DIST_S1_INT								INT_GPIOD								// Intentify on which Peripheral is the interrupt of the Ultrasonic Distance Sensor 1
 #define DIST_S1_M								1.0238									// m Parameter for linear adjustment (y = m*x + b)
 #define DIST_S1_B								0.0024									// b Parameter for linear adjustment (y = m*x + b)
 
@@ -36,11 +36,11 @@
 #define DIST_S2_ECHO							GPIO_PIN_6								// Intentify on which Pin is the step control of the Ultrasonic Distance Sensor 2
 #define DIST_S2_INT								INT_GPIOB								// Intentify on which Peripheral is the interrupt of the Ultrasonic Distance Sensor 2
 
-#define DIST_S3_PERIPH							SYSCTL_PERIPH_GPIOC						// Intentify on which Peripheral is the control of the Ultrasonic Distance Sensor 3
-#define DIST_S3_PORT							GPIO_PORTC_BASE							// Intentify on which Port is the control of the Ultrasonic Distance Sensor 3
-#define DIST_S3_TRIGGER							GPIO_PIN_4								// Intentify on which Pin is the direction control of the Ultrasonic Distance Sensor 3
-#define DIST_S3_ECHO							GPIO_PIN_5								// Intentify on which Pin is the step control of the Ultrasonic Distance Sensor 3
-#define DIST_S3_INT								INT_GPIOC								// Intentify on which Peripheral is the interrupt of the Ultrasonic Distance Sensor 3
+#define DIST_S3_PERIPH							SYSCTL_PERIPH_GPIOA						// Intentify on which Peripheral is the control of the Ultrasonic Distance Sensor 3
+#define DIST_S3_PORT							GPIO_PORTA_BASE							// Intentify on which Port is the control of the Ultrasonic Distance Sensor 3
+#define DIST_S3_TRIGGER							GPIO_PIN_3								// Intentify on which Pin is the direction control of the Ultrasonic Distance Sensor 3
+#define DIST_S3_ECHO							GPIO_PIN_2								// Intentify on which Pin is the step control of the Ultrasonic Distance Sensor 3
+#define DIST_S3_INT								INT_GPIOA								// Intentify on which Peripheral is the interrupt of the Ultrasonic Distance Sensor 3
 
 #define DIST_S4_PERIPH							SYSCTL_PERIPH_GPIOC						// Intentify on which Peripheral is the control of the Ultrasonic Distance Sensor 4
 #define DIST_S4_PORT							GPIO_PORTC_BASE							// Intentify on which Port is the control of the Ultrasonic Distance Sensor 4
