@@ -100,6 +100,9 @@ void DIST_Init(void)
 
 		// Enable interrupts in the Echo pin
 		IntEnable(pstSA[i].ui32DIST_SensorInterrupt);
+
+		// Set interrupt prio
+		//IntPrioritySet(pstSA[i].ui32DIST_SensorInterrupt, 0x60);
 	}
 }
 

@@ -44,6 +44,7 @@ extern void _c_int00(void);
 extern void UART_IntHandler(void);
 extern void TIMER_IntHandler1(void);
 extern void DIST_IntHandler(void);
+extern void IMU_IntHandler(void);
 
 //*****************************************************************************
 //
@@ -86,11 +87,11 @@ void (* const g_pfnVectors[])(void) =
     0,                                      // Reserved
     IntDefaultHandler,                      // The PendSV handler
     IntDefaultHandler,                      // The SysTick handler
-    IntDefaultHandler,                      // GPIO Port A
+    DIST_IntHandler,                      	// GPIO Port A
     DIST_IntHandler,                        // GPIO Port B
     DIST_IntHandler,                        // GPIO Port C
-    IntDefaultHandler,                      // GPIO Port D
-    IntDefaultHandler,                      // GPIO Port E
+    DIST_IntHandler,                     	// GPIO Port D
+    IMU_IntHandler,                 	    // GPIO Port E
     UART_IntHandler,						// UART0 Rx and Tx
     IntDefaultHandler,                      // UART1 Rx and Tx
     IntDefaultHandler,                      // SSI0 Rx and Tx

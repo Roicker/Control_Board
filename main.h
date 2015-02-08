@@ -30,5 +30,7 @@ void UART_Comm(void);
 void LED_Init(void);
 void UART_IntHandler(void);
 void TEST_main(void);
+void DEBUG_Init(void);
+uint8_t * UTILS_Memcpy(uint8_t * pDestination, const uint32_t * cpSource, uint32_t u32Length);
 
 #endif /* MAIN_H_ */

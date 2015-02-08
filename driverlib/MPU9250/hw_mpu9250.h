@@ -349,9 +349,16 @@
 //
 //*****************************************************************************
 #define MPU9250_I2C_SLV0_CTRL_EN						0x80        // Enable slave
+#define MPU9250_I2C_SLV0_CTRL_EN_T1						0x81        // Enable slave and transfer 1 Byte
+#define MPU9250_I2C_SLV0_CTRL_EN_T2						0x82        // Enable slave and transfer 2 Byte
+#define MPU9250_I2C_SLV0_CTRL_EN_T3						0x83        // Enable slave and transfer 3 Byte
+#define MPU9250_I2C_SLV0_CTRL_EN_T4						0x84        // Enable slave and transfer 4 Byte
+#define MPU9250_I2C_SLV0_CTRL_EN_T7						0x87        // Enable slave and transfer 7 Byte
+#define MPU9250_I2C_SLV0_CTRL_EN_T8						0x88        // Enable slave and transfer 8 Byte (This list can be extended with transfers up to 15 Bytes)
 #define MPU9250_I2C_SLV0_CTRL_BYTE_SW					0x40        // Byte-swap word pairs
 #define MPU9250_I2C_SLV0_CTRL_REG_DIS					0x20        // Disable register number transfer
 #define MPU9250_I2C_SLV0_CTRL_GRP						0x10        // Word pair grouping
+
 #define MPU9250_I2C_SLV0_CTRL_LEN_M						0x0F        // Number of bytes to transfer
 #define MPU9250_I2C_SLV0_CTRL_LEN_S						0
 
@@ -976,9 +983,11 @@
 // register.
 //
 //*****************************************************************************
+#define MPU9250_USER_CTRL_DMP_EN						0x80        // DMP enable
 #define MPU9250_USER_CTRL_FIFO_EN						0x40        // FIFO enable
-#define MPU9250_USER_CTRL_I2C_MST_EN					0x20        // I2C master mode enable
-#define MPU9250_USER_CTRL_I2C_IF_DIS					0x10        // Write as zero
+#define MPU9250_USER_CTRL_I2C_MST_EN					0x20        // I2C Master mode enable
+#define MPU9250_USER_CTRL_I2C_IF_DIS					0x10        // I2C Slave mode disable
+#define MPU9250_USER_CTRL_DMP_RESET						0x08        // Reset DMP
 #define MPU9250_USER_CTRL_FIFO_RESET					0x04        // Reset FIFO buffer
 #define MPU9250_USER_CTRL_I2C_MST_RESET					0x02        // Reset I2C master
 #define MPU9250_USER_CTRL_SIG_COND_RESET				0x01        // Reset all sensors (and sensor registers)
@@ -1117,8 +1126,78 @@
 // MPU9250
 //
 //*****************************************************************************
-
 #define AK8963_ADDRESS									0x0C		// Address of sensor AK8963
+#define AK8963_DEVICE_ID								0x48		// Device ID of sensor AK8963
+
+//*****************************************************************************
+//
+// The following are defines for the Magnetometer AK8963 read only registers
+//
+//
+//*****************************************************************************
+#define AK8963_WIA										0x00		// Register that stores Device ID
+#define AK8963_INFO										0x01		// Register that stores Device Info
+#define AK8963_ST1										0x02		// Status 1 Register
+#define AK8963_HXL										0x03		// LSB of Mag X-Axis Value
+#define AK8963_HXH										0x04		// MSB of Mag X-Axis Value
+#define AK8963_HYL										0x05		// LSB of Mag Y-Axis Value
+#define AK8963_HYH										0x06		// MSB of Mag Y-Axis Value
+#define AK8963_HZL										0x07		// LSB of Mag Z-Axis Value
+#define AK8963_HZH										0x08		// MSB of Mag Z-Axis Value
+#define AK8963_ST2										0x09		// Status 2 Register
+
+//*****************************************************************************
+//
+// The following are defines for the Magnetometer AK8963 read/write registers
+//
+//
+//*****************************************************************************
+#define AK8963_CNTL1									0x0A
+#define AK8963_CNTL2									0x0B
+#define AK8963_ASTC										0x0C
+#define AK8963_TS1										0x0D
+#define AK8963_TS2										0x0E
+#define AK8963_I2CDIS									0x0F
+
+//*****************************************************************************
+//
+// The following are defines for the Magnetometer AK8963 read only registers
+// (Fuse ROM)
+//
+//*****************************************************************************
+#define AK8963_ASAX										0x10
+#define AK8963_ASAY										0x11
+#define AK8963_ASAZ										0x12
+
+//*****************************************************************************
+//
+// The following are defines for the bit fields in the AK8963_CNTL1
+// register.
+//
+//*****************************************************************************
+#define AK8963_CNTL1_POWER_DOWN							0x00		// Power down mode
+#define AK8963_CNTL1_SINGLE								0x01		// Single measurement mode
+#define AK8963_CNTL1_M1_CONT_8HZ						0x02		// Continuous measurement mode - 8Hz (Mode 1)
+#define AK8963_CNTL1_M2_CONT_100HZ						0x06		// Continuous measurement mode - 100Hz (Mode 2)
+#define AK8963_CNTL1_EXT_TRIGGER						0x04		// External trigger measurement mode
+#define AK8963_CNTL1_SELF_TEST							0x08		// Self test mode
+#define AK8963_CNTL1_FUSE_ROM							0x0F		// Fuse ROM read mode
+
+#define AK8963_CNTL1_16_BIT								0x10		// 16 Bit output mode
+
+//*****************************************************************************
+//
+// The following are defines for the bit fields in the AK8963_CNTL2
+// register.
+//
+//*****************************************************************************
+#define AK8963_CNTL2_RESET								0x01
 
 
 #endif // __SENSORLIB_HW_MPU9250_H__
+
+//*****************************************************************************
+//
+// END OF FILE
+//
+//*****************************************************************************

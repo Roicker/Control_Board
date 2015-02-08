@@ -68,6 +68,9 @@ void TIMER_Init(void)
 	// Enable interrupts for Timer 1
 	IntEnable(INT_TIMER1A);
 
+	// Set interrupt prio
+	//IntPrioritySet(INT_TIMER1A, 0x40);
+
 	// Enable timeout interrupts for Timer 1
 	TimerIntEnable(TIMER1_BASE, TIMER_TIMA_TIMEOUT);
 }

@@ -28,9 +28,13 @@
 #define SPI_MODULE_3				3
 
 #define SPI_DELAY					700
+#define I2C_DELAY					6000
 
 #define SPI_COMM_LENGTH				8										// Possible values [16]
 #define SPI_COMM_LENGTH_BYTES		(SPI_COMM_LENGTH/8)
+
+#define SPI_FIFO_LENGTH				8
+#define SPI_FIFO_DATA_BYTES			7
 
 //*****************************************************************************
 //
@@ -52,8 +56,8 @@ struct SPI_Slave
 //*****************************************************************************
 
 bool SPI_Init(uint8_t ui8SPI_Module_Sel);
-bool SPI_Write(struct SPI_Slave* stDeviceHandle, uint32_t* ui32WriteBuffer, uint8_t ui8Length);
+bool SPI_Write(struct SPI_Slave* stDeviceHandle, uint32_t* ui32WriteBuffer, uint16_t ui16Length);
 void SPI_ClearFIFO(struct SPI_Slave* stDeviceHandle, uint32_t ui32ReadVar);
-bool SPI_ReadFIFO(struct SPI_Slave* stDeviceHandle, uint32_t* ui32ReadBuffer, uint8_t ui8Length);
+bool SPI_ReadFIFO(struct SPI_Slave* stDeviceHandle, uint32_t* ui32ReadBuffer, uint16_t ui16Length);
 
 #endif /* SPI_H_ */

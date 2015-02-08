@@ -55,6 +55,9 @@
 // Utils
 #include "utils/uartstdio.h"
 
+// Main header
+#include "main.h"
+
 //*****************************************************************************
 //
 //		Definitions
@@ -73,5 +76,11 @@
 
 #define MASK_LSB_ON					0x01
 
+#define DEBUG_PERIPH				SYSCTL_PERIPH_GPIOA						// Peripheral Debug pins
+#define DEBUG_PORT					GPIO_PORTA_BASE							// Port for Debug pins
+#define DEBUG_PIN_1					GPIO_PIN_6								// Debug pin 1
+#define DEBUG_PIN_2					GPIO_PIN_7								// Debug pin 2
+
+#define _bswap_constant_uint16(x)	x = ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))	// Byte swap macro
 
 #endif /* CONFIG_H_ */

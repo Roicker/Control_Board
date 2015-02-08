@@ -49,6 +49,8 @@ char cUARTDataRX = 0;
 extern struct STEP_Motor stLeft_Handle;
 extern struct STEP_Motor stRight_Handle;
 
+extern struct MPU9250 stMPU9250_Values;
+
 //*****************************************************************************
 //
 //		Interrupt Handlers
@@ -59,7 +61,7 @@ extern struct STEP_Motor stRight_Handle;
 //		UART_IntHandler
 //*****************************************************************************
 
-void UART_IntHandler(void)
+void UART_IntHandler()
 {
 	// Variable to store interrupt status
 	uint32_t ui32Status;
@@ -106,6 +108,9 @@ bool SYS_Init(void)
 	// Create ret variable and initialize it
 	bool ret = true;
 
+	// Disable processor interrupts
+	ROM_IntMasterDisable();
+
 	// Run at 80Mhz
 	ROM_SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
 
@@ -135,8 +140,11 @@ bool SYS_Init(void)
 	// Init Timers
 	TIMER_Init();
 
+	// Init debug pins
+	DEBUG_Init();
+
 	// Enable processor interrupts
-	ROM_IntMasterEnable();
+	IntMasterEnable();
 
 	return ret;
 }
@@ -203,6 +211,9 @@ void UART_Init(void)
 	// Enable the UART interrupt
 	IntEnable(INT_UART0);
 
+	// Set interrupt prio
+	//IntPrioritySet(IMU_INTPIN_INT, 0x80);
+
 	// Enable RX and TX interrupts only
 	UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
 }
@@ -256,7 +267,11 @@ void main(void)
 	}
 #ifdef DEBUG_CB
 	// Init Console
-	UARTprintf("\nSelect desired command:\n 1 - Enable/Disable Right Stepper\n 2 - Enable/Disable Left Stepper\n 3 - Reverse Right Stepper\n 4 - Reverse Left Stepper\n 5 - Read RAW IMU Values\n 6 - Enable SM Driver\n 7 - Disable SM Driver\n 8 - Read Distance\n\nCommand: ");
+	UARTprintf("\nSelect desired command:\n 1 - Enable/Disable Right Stepper\n 2 - Enable/Disable Left Stepper\n 3 - Reverse Right Stepper\n 4 - Reverse Left Stepper");
+	UARTprintf("\n 5 - Read RAW IMU Values\n 6 - Enable SM Driver\n 7 - Disable SM Driver\n 8 - Read Distance\n 9 - Calibrate Accel and Gyro\n A - Calibrate Mag\n\nCommand: ");
+
+	// Enable processor interrupts
+	//IntMasterEnable();
 
 	// Main Loop
 	while(1)
@@ -281,7 +296,7 @@ void TEST_main(void)
 		UART_Comm();
 	}
 
-	cUARTDataTX = 0;
+	/*cUARTDataTX = 0;
 
 	UARTCharPutNonBlocking(UART1_BASE, cUARTDataTX);
 
@@ -305,7 +320,7 @@ void TEST_main(void)
 	{
 		// Blink LED - Green?
 		ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0);
-	}
+	}*/
 
 	//DELAY_MS(1000);
 
@@ -412,6 +427,24 @@ void UART_Comm()
 		// Prepare for next command
 		ui8UART_RX_Pointer_Start = ui8UART_RX_Pointer_End;
 		break;
+		// Command 9
+	case 0x39:
+		// Calibrate Accel and Gyro
+		stMPU9250_Values.AccGyro_Calibrated = false;
+		// New line
+		UARTprintf("\nCommand: ");
+		// Prepare for next command
+		ui8UART_RX_Pointer_Start = ui8UART_RX_Pointer_End;
+		break;
+		// Command A
+	case 0x41:
+		// Calibrate Mag
+		stMPU9250_Values.Mag_Calibrated = false;
+		// New line
+		UARTprintf("\nCommand: ");
+		// Prepare for next command
+		ui8UART_RX_Pointer_Start = ui8UART_RX_Pointer_End;
+		break;
 		// Command CR
 	case CARRIAGE_RETURN:
 		// New line
@@ -428,3 +461,66 @@ void UART_Comm()
 
 	bUART_StringAvailable = false;
 }
+
+//*****************************************************************************
+//		DEBUG_Init
+//*****************************************************************************
+
+void DEBUG_Init()
+{
+	// Enable Port for debug pins
+	SysCtlPeripheralEnable(DEBUG_PERIPH);
+
+	// Init debug pin 1
+	GPIOPinTypeGPIOOutput(DEBUG_PORT, DEBUG_PIN_1);
+
+	// Init debug pin 2
+	GPIOPinTypeGPIOOutput(DEBUG_PORT, DEBUG_PIN_2);
+
+	// Reset Debug pin 1
+	GPIOPinWrite(DEBUG_PORT, DEBUG_PIN_1, 0);
+
+	// Reset Debug pin 2
+	GPIOPinWrite(DEBUG_PORT, DEBUG_PIN_2, 0);
+}
+
+//*****************************************************************************
+//		UTILS_Memcpy
+//*****************************************************************************
+
+uint8_t * UTILS_Memcpy(uint8_t * pDestination, const uint32_t * cpSource, uint32_t u32Length)
+{
+	// Variable used in for loop
+	uint32_t u32Counter = 0;
+
+	// Copy memory from cpSource to pDestination
+    for(u32Counter = 0; u32Counter < u32Length; u32Counter++)
+    {
+    	pDestination[u32Counter] = (uint8_t)cpSource[u32Counter];
+    }
+
+    // Returns address of the first byte after the destination buffer
+    return &pDestination[u32Counter];
+}
+
+//*****************************************************************************
+//		UTILS_Wordswap
+//*****************************************************************************
+//
+//void UTILS_Wordswap(uint16_t * pu16Input, uint32_t u32Length)
+//{
+//	// Variable used in for loop
+//	uint32_t u32Counter = 0;
+//
+//	// Temporary variable for swap
+//	uint8_t u8MSB = 0;
+//
+//	// u8 Pointer for swap
+//
+//	// Swap Bytes in Word
+//    for(u32Counter = 0; u32Counter < u32Length; u32Counter++)
+//    {
+//
+//    	u8MSB = ()&pu16Input >> 8)
+//    }
+//}

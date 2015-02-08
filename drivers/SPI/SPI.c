@@ -144,10 +144,10 @@ bool SPI_Init(uint8_t ui8SPI_Module_Sel)
 //	SPI_Write
 //*****************************************************************************
 
-bool SPI_Write(struct SPI_Slave* stDeviceHandle, uint32_t* ui32WriteBuffer, uint8_t ui8Length)
+bool SPI_Write(struct SPI_Slave* stDeviceHandle, uint32_t* ui32WriteBuffer, uint16_t ui16Length)
 {
 	// Init counter for loop
-	uint8_t i = 0;
+	uint16_t i = 0;
 
 	// Init return bool var
 	bool ret = false;
@@ -166,7 +166,7 @@ bool SPI_Write(struct SPI_Slave* stDeviceHandle, uint32_t* ui32WriteBuffer, uint
 		GPIOPinWrite(stDeviceHandle->ui32SPI_CSPort, stDeviceHandle->ui32SPI_CSPin, 0);
 
 		// Loop to send characters (value of ui8Length)
-		for(i = 0; i < ui8Length; i++)
+		for(i = 0; i < ui16Length; i++)
 		{
 			// Write SPI_COMM_LENGTH Bits (Length configured in SPI_Init)
 			SSIDataPut(stDeviceHandle->ui32SPI_BaseAddress, ui32WriteBuffer[i]);
@@ -202,16 +202,16 @@ void SPI_ClearFIFO(struct SPI_Slave* stDeviceHandle, uint32_t ui32ReadVar)
 //	SPI_ReadFIFO
 //*****************************************************************************
 
-bool SPI_ReadFIFO(struct SPI_Slave* stDeviceHandle, uint32_t* ui32ReadBuffer, uint8_t ui8Length)
+bool SPI_ReadFIFO(struct SPI_Slave* stDeviceHandle, uint32_t* ui32ReadBuffer, uint16_t ui16Length)
 {
 	// Init counter for loop
-	uint8_t i = 0;
+	uint16_t i = 0;
 
 	// Init return bool var
 	bool ret = true;
 
 	// Read the amount of bytes requested from the FIFO
-	for(i = 0; i < ui8Length; i++)
+	for(i = 0; i < ui16Length; i++)
 	{
 		// Get data from FIFO - if FIFO is empty, the function returns 0
 		if(0 == SSIDataGetNonBlocking(stDeviceHandle->ui32SPI_BaseAddress, &ui32ReadBuffer[i]) )
