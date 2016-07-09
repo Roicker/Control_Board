@@ -28,8 +28,14 @@
 #define CS_MPU9250_PIN				GPIO_PIN_3								// Intentify on which Pin is the CS line of the MPU9250
 
 // Number of values to be read from MPU-9250 FIFO
-#define MPU9250_EXP_FIFO_COUNT		21
+#define MPU9250_EXP_FIFO_COUNT		22
 #define	MPU9250_RX_FIFO_BYTES		22
+
+//*****************************************************************************
+//
+//		Variables
+//
+//*****************************************************************************
 
 //*****************************************************************************
 //
@@ -83,14 +89,13 @@ struct Mag_Bias
 struct MPU9250
 {
 	struct Accelerometer ACCEL;
-	int16_t TEMP;
+	int16_t TEMP_MPU;
 	struct Gyroscope GYRO;
 	struct Magnetometer MAG;
+	int16_t TEMP_AK;
 	struct Accel_Bias ACCEL_BIAS;
 	struct Gyro_Bias GYRO_BIAS;
 	struct Mag_Bias MAG_BIAS;
-	bool AccGyro_Calibrated;
-	bool Mag_Calibrated;
 };
 
 //*****************************************************************************

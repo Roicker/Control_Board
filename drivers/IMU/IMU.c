@@ -29,13 +29,26 @@
 //
 //*****************************************************************************
 
-// Structures to hold sensor data
-extern struct MS5611 stMS5611_Values;
-extern struct MPU9250 stMPU9250_Values;
-
 // Counters for calibration cycles
 uint8_t IMU_u8AccelGyro_Counter = 0;
 uint16_t IMU_u16Mag_Counter = 0;
+
+//*****************************************************************************
+//
+//		Extern Variables
+//
+//*****************************************************************************
+
+// Structures to hold sensor data
+extern struct MS5611 stMS5611_Values;
+extern struct MPU9250 stMPU9250_Values[2];
+
+// Variable to store which stMPU9250_Values is currently buffer
+extern uint8_t MPU9250_BufferVar;
+
+// Calibration flags
+extern bool AccGyro_Calibrated;
+extern bool Mag_Calibrated;
 
 //*****************************************************************************
 //
@@ -55,6 +68,8 @@ uint16_t IMU_u16Mag_Counter = 0;
 
 void IMU_IntHandler()
 {
+	// Variable to read
+
 	// Set Debug pin 1 to measure excecution time
 	GPIOPinWrite(DEBUG_PORT, DEBUG_PIN_1, DEBUG_PIN_1);
 
@@ -71,17 +86,16 @@ void IMU_IntHandler()
 	MPU9250_Update9Axis();
 
 	// Check if system should be calibrated
-	if(!stMPU9250_Values.AccGyro_Calibrated)
+	if(!AccGyro_Calibrated)
 	{
 		// Call calibration function for Accel and Gyro
 		IMU_CalibrateGyroAccel();
 	}
-	else if(!stMPU9250_Values.Mag_Calibrated)
+	else if(!Mag_Calibrated)
 	{
 		// Call calibration function for Mag
 		IMU_CalibrateMag();
 	}
-
 
 	// Set Debug pin 1 to measure excecution time
 	GPIOPinWrite(DEBUG_PORT, DEBUG_PIN_1, 0);
@@ -151,15 +165,26 @@ void IMU_UpdateValues()
 	MS5611_UpdatePressure();
 	MS5611_UpdateTemp();
 #ifdef DEBUG_CB
+
+	// Swap buffer identifier
+	if(0 == MPU9250_BufferVar)
+	{
+		 = 0;
+	}
+	else
+	{
+		 = 1;
+	}
+
 	// Print IMU Variable Values
 
 	// MPU9250 Values
-	UARTprintf("\n\n MPU9250 \n ACCEL - X: %d  Y: %d  Z: %d", stMPU9250_Values.ACCEL.x, stMPU9250_Values.ACCEL.y, stMPU9250_Values.ACCEL.z);
-	UARTprintf("\n GYRO  - X: %d  Y: %d  Z: %d", stMPU9250_Values.GYRO.x, stMPU9250_Values.GYRO.y, stMPU9250_Values.GYRO.z);
-	UARTprintf("\n MAG   - X: %d  Y: %d  Z: %d", stMPU9250_Values.MAG.x, stMPU9250_Values.MAG.y, stMPU9250_Values.MAG.z);
+	UARTprintf("\n\n MPU9250 \n ACCEL - X: %d  Y: %d  Z: %d", stMPU9250_Values[MPU9250_BufferVar].ACCEL.x, stMPU9250_Values[MPU9250_BufferVar].ACCEL.y, stMPU9250_Values[MPU9250_BufferVar].ACCEL.z);
+	UARTprintf("\n GYRO  - X: %d  Y: %d  Z: %d", stMPU9250_Values[MPU9250_BufferVar].GYRO.x, stMPU9250_Values[MPU9250_BufferVar].GYRO.y, stMPU9250_Values[MPU9250_BufferVar].GYRO.z);
+	UARTprintf("\n MAG   - X: %d  Y: %d  Z: %d", stMPU9250_Values[MPU9250_BufferVar].MAG.x, stMPU9250_Values[MPU9250_BufferVar].MAG.y, stMPU9250_Values[MPU9250_BufferVar].MAG.z);
 
 	// MS5611 Values
-	UARTprintf("\n MS5611 \n Pressure: %d  Temperature: %d\n", stMS5611_Values.Pressure, stMS5611_Values.Temperature);
+	UARTprintf("\n\n MS5611 \n Pressure: %d  Temperature: %d\n", stMS5611_Values.Pressure, stMS5611_Values.Temperature);
 #endif
 }
 
@@ -172,14 +197,14 @@ void IMU_CalibrateGyroAccel()
 	if(IMU_u8AccelGyro_Counter < IMU_ACC_GYRO_CAL_CYCLES)
 	{
 		// Create sum of all read Accel values
-		stMPU9250_Values.ACCEL_BIAS.x += (uint32_t) stMPU9250_Values.ACCEL.x;
-		stMPU9250_Values.ACCEL_BIAS.y += (uint32_t) stMPU9250_Values.ACCEL.y;
-		stMPU9250_Values.ACCEL_BIAS.z += (uint32_t) stMPU9250_Values.ACCEL.z;
+		stMPU9250_Values[MPU9250_BufferVar].ACCEL_BIAS.x += (uint32_t) stMPU9250_Values[MPU9250_BufferVar].ACCEL.x;
+		stMPU9250_Values[MPU9250_BufferVar].ACCEL_BIAS.y += (uint32_t) stMPU9250_Values[MPU9250_BufferVar].ACCEL.y;
+		stMPU9250_Values[MPU9250_BufferVar].ACCEL_BIAS.z += (uint32_t) stMPU9250_Values[MPU9250_BufferVar].ACCEL.z;
 
 		// Create sum of all read Gyro values
-		stMPU9250_Values.GYRO_BIAS.x += (uint32_t) stMPU9250_Values.GYRO.x;
-		stMPU9250_Values.GYRO_BIAS.y += (uint32_t) stMPU9250_Values.GYRO.y;
-		stMPU9250_Values.GYRO_BIAS.z += (uint32_t) stMPU9250_Values.GYRO.z;
+		stMPU9250_Values[MPU9250_BufferVar].GYRO_BIAS.x += (uint32_t) stMPU9250_Values[MPU9250_BufferVar].GYRO.x;
+		stMPU9250_Values[MPU9250_BufferVar].GYRO_BIAS.y += (uint32_t) stMPU9250_Values[MPU9250_BufferVar].GYRO.y;
+		stMPU9250_Values[MPU9250_BufferVar].GYRO_BIAS.z += (uint32_t) stMPU9250_Values[MPU9250_BufferVar].GYRO.z;
 
 		// Increase counter
 		IMU_u8AccelGyro_Counter++;
@@ -190,22 +215,22 @@ void IMU_CalibrateGyroAccel()
 		IMU_u8AccelGyro_Counter = 0;
 
 		// Signal that the Accelerometer and Gyro have been calibrated
-		stMPU9250_Values.AccGyro_Calibrated = true;
+		AccGyro_Calibrated = true;
 
 		// Normalize sums to get average bias
-		stMPU9250_Values.ACCEL_BIAS.x /= (uint32_t) IMU_ACC_GYRO_CAL_CYCLES;
-		stMPU9250_Values.ACCEL_BIAS.z /= (uint32_t) IMU_ACC_GYRO_CAL_CYCLES;
-		stMPU9250_Values.ACCEL_BIAS.y /= (uint32_t) IMU_ACC_GYRO_CAL_CYCLES;
+		stMPU9250_Values[MPU9250_BufferVar].ACCEL_BIAS.x /= (uint32_t) IMU_ACC_GYRO_CAL_CYCLES;
+		stMPU9250_Values[MPU9250_BufferVar].ACCEL_BIAS.z /= (uint32_t) IMU_ACC_GYRO_CAL_CYCLES;
+		stMPU9250_Values[MPU9250_BufferVar].ACCEL_BIAS.y /= (uint32_t) IMU_ACC_GYRO_CAL_CYCLES;
 
 		// Normalize sums to get average bias
-		stMPU9250_Values.GYRO_BIAS.x /= (uint32_t) IMU_ACC_GYRO_CAL_CYCLES;
-		stMPU9250_Values.GYRO_BIAS.y /= (uint32_t) IMU_ACC_GYRO_CAL_CYCLES;
-		stMPU9250_Values.GYRO_BIAS.z /= (uint32_t) IMU_ACC_GYRO_CAL_CYCLES;
+		stMPU9250_Values[MPU9250_BufferVar].GYRO_BIAS.x /= (uint32_t) IMU_ACC_GYRO_CAL_CYCLES;
+		stMPU9250_Values[MPU9250_BufferVar].GYRO_BIAS.y /= (uint32_t) IMU_ACC_GYRO_CAL_CYCLES;
+		stMPU9250_Values[MPU9250_BufferVar].GYRO_BIAS.z /= (uint32_t) IMU_ACC_GYRO_CAL_CYCLES;
 
 		// Print message to signal that Gyro and Accel calibration is complete
 		UARTprintf("\n\n Calibration of Accelerometer and Gyro is complete");
-		UARTprintf("\n Accel Bias - X: %d  Y: %d  Z: %d", stMPU9250_Values.ACCEL_BIAS.x, stMPU9250_Values.ACCEL_BIAS.y, stMPU9250_Values.ACCEL_BIAS.z);
-		UARTprintf("\n Gyro Bias - X: %d  Y: %d  Z: %d", stMPU9250_Values.GYRO_BIAS.x, stMPU9250_Values.GYRO_BIAS.y, stMPU9250_Values.GYRO_BIAS.z);
+		UARTprintf("\n Accel Bias - X: %d  Y: %d  Z: %d", stMPU9250_Values[MPU9250_BufferVar].ACCEL_BIAS.x, stMPU9250_Values[MPU9250_BufferVar].ACCEL_BIAS.y, stMPU9250_Values[MPU9250_BufferVar].ACCEL_BIAS.z);
+		UARTprintf("\n Gyro Bias - X: %d  Y: %d  Z: %d", stMPU9250_Values[MPU9250_BufferVar].GYRO_BIAS.x, stMPU9250_Values[MPU9250_BufferVar].GYRO_BIAS.y, stMPU9250_Values[MPU9250_BufferVar].GYRO_BIAS.z);
 		UARTprintf("\n\nCommand: ");
 	}
 }
@@ -225,6 +250,6 @@ void IMU_CalibrateMag()
 		IMU_u16Mag_Counter = 0;
 
 		// Signal that the Accelerometer and Gyro have been calibrated
-		stMPU9250_Values.Mag_Calibrated = true;
+		Mag_Calibrated = true;
 	}
 }

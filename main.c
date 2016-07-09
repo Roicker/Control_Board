@@ -49,7 +49,15 @@ char cUARTDataRX = 0;
 extern struct STEP_Motor stLeft_Handle;
 extern struct STEP_Motor stRight_Handle;
 
-extern struct MPU9250 stMPU9250_Values;
+// Structures to hold sensor data
+extern struct MPU9250 stMPU9250_Values[2];
+
+// Variable to store which stMPU9250_Values is currently buffer
+extern uint8_t MPU9250_BufferVar;
+
+// Calibration flags
+extern bool AccGyro_Calibrated;
+extern bool Mag_Calibrated;
 
 //*****************************************************************************
 //
@@ -430,7 +438,7 @@ void UART_Comm()
 		// Command 9
 	case 0x39:
 		// Calibrate Accel and Gyro
-		stMPU9250_Values.AccGyro_Calibrated = false;
+		AccGyro_Calibrated = false;
 		// New line
 		UARTprintf("\nCommand: ");
 		// Prepare for next command
@@ -439,7 +447,7 @@ void UART_Comm()
 		// Command A
 	case 0x41:
 		// Calibrate Mag
-		stMPU9250_Values.Mag_Calibrated = false;
+		Mag_Calibrated = false;
 		// New line
 		UARTprintf("\nCommand: ");
 		// Prepare for next command

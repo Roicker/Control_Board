@@ -39,7 +39,7 @@
 #define STEP_ENABLE_PORT						GPIO_PORTE_BASE							// Intentify on which Port is the enable pin of the steper motors
 #define STEP_ENABLE_PIN							GPIO_PIN_0								// Intentify on which Pin is the enable pin of the steper motors
 
-#define STEP_DELAY								500										// Minimum delay for proper stepper motor operation (Microstep 1/8)
+#define STEP_DELAY								3500										// Minimum delay for proper stepper motor operation (Microstep 1/8)
 
 //*****************************************************************************
 //
