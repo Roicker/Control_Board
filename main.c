@@ -2,7 +2,7 @@
 //
 // main.c - Main program entry point and initialization
 //
-// Copyright (c) 2014 Raymundo Magaña Gomez - http://rmg.mx
+// Copyright (c) 2014 Raymundo Magaña Gomez - http://raymundomagana.webs.com/
 //
 // Software License Agreement
 //
@@ -39,6 +39,7 @@ bool bUART_RSM_Enabled = false;
 bool bUART_LSM_Enabled = false;
 char cUARTDataTX = 0;
 char cUARTDataRX = 0;
+extern volatile int16_t ex, ey, ez;						// Integer representation of euler angles
 
 //*****************************************************************************
 //
@@ -52,18 +53,92 @@ extern struct STEP_Motor stRight_Handle;
 // Structures to hold sensor data
 extern struct MPU9250 stMPU9250_Values[2];
 
-// Variable to store which stMPU9250_Values is currently buffer
-extern uint8_t MPU9250_BufferVar;
-
 // Calibration flags
-extern bool AccGyro_Calibrated;
-extern bool Mag_Calibrated;
+extern bool bAccGyro_Calibrated;
+extern bool bMag_Calibrated;
+
+// Variable to store which stMPU9250_Values is currently head
+extern uint8_t ui8MPU9250_RBHead;
+
+// Variable to store which stMPU9250_Values is currently tail
+extern uint8_t ui8MPU9250_RBTail;
+
+// Variable to store how many stMPU9250_Values entries are filled
+extern uint8_t ui8MPU9250_RBCount;
 
 //*****************************************************************************
 //
-//		Interrupt Handlers
+//		Functions
 //
 //*****************************************************************************
+
+//*****************************************************************************
+//		Main Function
+//*****************************************************************************
+
+void main(void)
+{
+	if ( false == SYS_Init() )
+	{
+#ifdef DEBUG_CB
+		// Send error message
+		UARTprintf("\nError: Init failed!\n");
+#endif
+		// Enter eternal while loop to signal error
+		while(1)
+		{
+			// Error! Blink RED Led
+			ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, GPIO_PIN_1);
+			// Delay for 250 ms
+			DELAY_MS(500);
+			// Error! Blink RED Led
+			ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);
+			// Delay for 1500 ms
+			DELAY_MS(3000);
+		}
+	}
+	else
+	{
+#ifdef DEBUG_CB
+		// Send success message
+		UARTprintf("\n\nInit Successful!\n");
+#endif
+	}
+#ifdef DEBUG_CB
+	// Init Console
+	UARTprintf("\nSelect desired command:\n 1 - Enable/Disable Right Stepper\n 2 - Enable/Disable Left Stepper\n 3 - Reverse Right Stepper\n 4 - Reverse Left Stepper");
+	UARTprintf("\n 5 - Read RAW IMU Values\n 6 - Enable SM Driver\n 7 - Disable SM Driver\n 8 - Read Distance\n 9 - Calibrate Accel and Gyro\n A - Calibrate Mag\n\nCommand: ");
+#endif
+
+	// Main Loop
+	while(1)
+	{
+#ifdef DEBUG_CB
+		// Call test routine
+		TEST_main();
+#endif
+		// Normal board operation routines
+
+		// If characters are available, call function to process the data
+		if(bUART_StringAvailable)
+		{
+			// UART Function that processes the received command
+			UART_Comm();
+		}
+
+		// Check if new IMU Data is available
+		if(ui8MPU9250_RBCount > 0)
+		{
+			// Get identifier of new element in ui8MPU9250_RBTail
+			MPU9250_RBRemoveElement();
+
+			// Obtain 9-DOF values from raw data
+			IMU_ProcessValues();
+
+
+		}
+	}
+}
 
 //*****************************************************************************
 //		UART_IntHandler
@@ -86,6 +161,7 @@ void UART_IntHandler()
 		// Store Char in Buffer
 		ui8UART_RX_String[ui8UART_RX_Pointer_End] = UARTCharGetNonBlocking(UART0_BASE);
 
+#ifdef DEBUG_CB
 		// Echo character
 		UARTCharPutNonBlocking(UART0_BASE, ui8UART_RX_String[ui8UART_RX_Pointer_End]);
 
@@ -95,6 +171,10 @@ void UART_IntHandler()
 			// Signal that a string is available
 			bUART_StringAvailable = true;
 		}
+#else
+		// Notify that a data has been received
+		bUART_StringAvailable = true;
+#endif
 
 		// Increase pointer
 		ui8UART_RX_Pointer_End++;
@@ -118,6 +198,10 @@ bool SYS_Init(void)
 
 	// Disable processor interrupts
 	ROM_IntMasterDisable();
+
+	// Enable FPU
+	ROM_FPULazyStackingEnable();
+	ROM_FPUEnable();
 
 	// Run at 80Mhz
 	ROM_SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
@@ -242,56 +326,6 @@ void LED_Init(void)
 }
 
 //*****************************************************************************
-//		Main Function
-//*****************************************************************************
-
-void main(void)
-{
-	if ( false == SYS_Init() )
-	{
-#ifdef DEBUG_CB
-		// Send error message
-		UARTprintf("\nError: Init failed!\n");
-#endif
-		// Enter eternal while loop to signal error
-		while(1)
-		{
-			// Error! Blink RED Led
-			ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, GPIO_PIN_1);
-			// Delay for 250 ms
-			DELAY_MS(500);
-			// Error! Blink RED Led
-			ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);
-			// Delay for 1500 ms
-			DELAY_MS(3000);
-		}
-	}
-	else
-	{
-#ifdef DEBUG_CB
-		// Send success message
-		UARTprintf("\n\nInit Successful!\n");
-#endif
-	}
-#ifdef DEBUG_CB
-	// Init Console
-	UARTprintf("\nSelect desired command:\n 1 - Enable/Disable Right Stepper\n 2 - Enable/Disable Left Stepper\n 3 - Reverse Right Stepper\n 4 - Reverse Left Stepper");
-	UARTprintf("\n 5 - Read RAW IMU Values\n 6 - Enable SM Driver\n 7 - Disable SM Driver\n 8 - Read Distance\n 9 - Calibrate Accel and Gyro\n A - Calibrate Mag\n\nCommand: ");
-
-	// Enable processor interrupts
-	//IntMasterEnable();
-
-	// Main Loop
-	while(1)
-	{
-		// Call test routine
-		TEST_main();
-#endif
-	}
-}
-
-
-//*****************************************************************************
 //		TEST_main
 //*****************************************************************************
 
@@ -363,7 +397,21 @@ void UART_Comm()
 	// Read command and execute desired operations
 	switch(ui8UART_RX_String[ui8UART_RX_Pointer_Start])
 	{
-	// Command 1
+		// Send New Data
+	case 0x2E:
+		// Send the current angles
+		UARTprintf("%d, %d, %d\n",ex,ey,ez);
+		// Prepare for next command
+		ui8UART_RX_Pointer_Start = ui8UART_RX_Pointer_End;
+		break;
+		// 'z' Received
+	case 0x7A:
+		// Do nothing
+		// Prepare for next command
+		ui8UART_RX_Pointer_Start = ui8UART_RX_Pointer_End;
+		break;
+#ifdef DEBUG_CB
+		// Command 1
 	case 0x31:
 		// Enable Right Stepper Motor
 		bUART_RSM_Enabled = !bUART_RSM_Enabled;
@@ -438,7 +486,7 @@ void UART_Comm()
 		// Command 9
 	case 0x39:
 		// Calibrate Accel and Gyro
-		AccGyro_Calibrated = false;
+		bAccGyro_Calibrated = false;
 		// New line
 		UARTprintf("\nCommand: ");
 		// Prepare for next command
@@ -447,7 +495,7 @@ void UART_Comm()
 		// Command A
 	case 0x41:
 		// Calibrate Mag
-		Mag_Calibrated = false;
+		bMag_Calibrated = false;
 		// New line
 		UARTprintf("\nCommand: ");
 		// Prepare for next command
@@ -460,8 +508,11 @@ void UART_Comm()
 		// Prepare for next command
 		ui8UART_RX_Pointer_Start = ui8UART_RX_Pointer_End;
 		break;
+#endif
 	default:
+#ifdef DEBUG_CB
 		UARTprintf("\nError: Command "" not recognized! Please try again\nCommand: ");
+#endif
 		// Prepare for next command
 		ui8UART_RX_Pointer_Start = ui8UART_RX_Pointer_End;
 		break;
@@ -504,11 +555,27 @@ uint8_t * UTILS_Memcpy(uint8_t * pDestination, const uint32_t * cpSource, uint32
 	// Copy memory from cpSource to pDestination
     for(u32Counter = 0; u32Counter < u32Length; u32Counter++)
     {
-    	pDestination[u32Counter] = (uint8_t)cpSource[u32Counter];
+    	pDestination[u32Counter] = cpSource[u32Counter];
     }
 
     // Returns address of the first byte after the destination buffer
     return &pDestination[u32Counter];
+}
+
+//*****************************************************************************
+//		UTILS_Memset
+//*****************************************************************************
+
+void UTILS_Memset(uint8_t * pDestination, uint8_t u8Value, uint32_t u32Length)
+{
+	// Variable used in for loop
+	uint32_t u32Counter = 0;
+
+	// Set memory on pDestination
+    for(u32Counter = 0; u32Counter < u32Length; u32Counter++)
+    {
+    	pDestination[u32Counter] = u8Value;
+    }
 }
 
 //*****************************************************************************

@@ -2,7 +2,7 @@
 //
 // STEP.c - Stepper Motor Driver for Pololu DRV8825 Driver Carrier
 //
-// Copyright (c) 2014 Raymundo Magaña Gomez - http://rmg.mx
+// Copyright (c) 2014 Raymundo Magaña Gomez - http://raymundomagana.webs.com/
 //
 // Software License Agreement
 //

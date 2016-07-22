@@ -2,7 +2,7 @@
 //
 // MPU9250.c - MPU9250 Driver
 //
-// Copyright (c) 2014 Raymundo Magaña Gomez - http://rmg.mx
+// Copyright (c) 2014 Raymundo Magaña Gomez - http://raymundomagana.webs.com/
 //
 // Software License Agreement
 //
@@ -31,23 +31,27 @@
 
 // Structures to hold sensor data
 struct SPI_Slave stMPU9250_Handle = {IMU_SPI_BASE, CS_MPU9250_PORT, CS_MPU9250_PIN};
-struct MPU9250 stMPU9250_Values[2] =	{
-											{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-											{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
-										};
+struct MPU9250 stMPU9250_Values[MPU9250_RB_SIZE];
+struct MPU9250_BIAS stMPU9250_Bias = {0,0,0,0,0,0,0,0,0,MPU9250_MAG_SENS_X,MPU9250_MAG_SENS_Y,MPU9250_MAG_SENS_Z};
 
-// Variable to store which stMPU9250_Values is currently buffer
-uint8_t MPU9250_BufferVar = 0;
+// Variable to store which stMPU9250_Values is currently head
+uint8_t ui8MPU9250_RBHead = 0;
+
+// Variable to store which stMPU9250_Values is currently tail
+uint8_t ui8MPU9250_RBTail = 0;
+
+// Variable to store how many stMPU9250_Values entries are filled
+uint8_t ui8MPU9250_RBCount = 0;
 
 // Calibration flags
-bool AccGyro_Calibrated = true;
-bool Mag_Calibrated = true;
+bool bAccGyro_Calibrated = false;
+bool bMag_Calibrated = false;
 
 // Variables to store Mag calibration read from AK8963
 uint16_t AK8963_X_CAL, AK8963_Y_CAL, AK8963_Z_CAL;
 
 // Init buffer
-uint32_t ui32ClearBuffer[513];
+//uint32_t ui32ClearBuffer[513];
 
 //*****************************************************************************
 //
@@ -67,6 +71,9 @@ void MPU9250_Init()
 
 	// Set ui32ClearBuffer
 	//memset(ui32ClearBuffer, 0xAFAF, 513);
+
+	// Initalize stMPU9250_Values array
+	UTILS_Memset((uint8_t *)&stMPU9250_Values[0], 0, MPU9250_RB_SIZE);
 
 	// MPU9250 Initialization //
 
@@ -174,6 +181,7 @@ void MPU9250_Init()
 
 		// Config ACC +-4G
 		ui32WriteBuffer[0] = MPU9250_O_ACCEL_CONFIG;
+		//ui32WriteBuffer[1] = MPU9250_ACCEL_CONFIG_AFS_SEL_2G;
 		ui32WriteBuffer[1] = MPU9250_ACCEL_CONFIG_AFS_SEL_4G;
 		SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
 
@@ -246,6 +254,7 @@ void MPU9250_Init()
 		// Delay between after reset of AK8963
 		SysCtlDelay(I2C_DELAY);
 		SysCtlDelay(I2C_DELAY);
+		SysCtlDelay(I2C_DELAY);
 
 		/////////////////////////////////////////////////////////////////////////////
 
@@ -262,7 +271,7 @@ void MPU9250_Init()
 		// Write the Data to be transferred to AK8963
 		ui32WriteBuffer[0] = MPU9250_O_I2C_SLV0_DO;
 		ui32WriteBuffer[1] = AK8963_CNTL1_FUSE_ROM; // Set AK8963 in FUSE mode
-		// ui32WriteBuffer[1] = AK8963_CNTL1_16_BIT | AK8963_CNTL1_FUSE_ROM; // Set AK8963 in FUSE mode
+		//ui32WriteBuffer[1] = AK8963_CNTL1_16_BIT | AK8963_CNTL1_FUSE_ROM; // Set AK8963 in FUSE mode
 		SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
 
 		// Delay between SPI Operations
@@ -274,6 +283,9 @@ void MPU9250_Init()
 		SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
 
 		// Delay after setting AK8963 in FUSE Mode
+		// How much delay is really needed? Need to test stability...
+		SysCtlDelay(I2C_DELAY);
+		SysCtlDelay(I2C_DELAY);
 		SysCtlDelay(I2C_DELAY);
 		SysCtlDelay(I2C_DELAY);
 		SysCtlDelay(I2C_DELAY);
@@ -385,10 +397,10 @@ void MPU9250_Init()
 		// Read Data from RX FIFO
 		if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 4) )
 		{
-	#ifdef DEBUG_CB
+#ifdef DEBUG_CB
 			// Send error message
 			UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
-	#endif
+#endif
 		}
 
 		// Print device sensitivity
@@ -396,6 +408,10 @@ void MPU9250_Init()
 		// Send error message
 		UARTprintf("\n\n ASAX: %d  ASAY: %d  ASAZ: %d\n", ui32ReadBuffer[1], ui32ReadBuffer[2], ui32ReadBuffer[3]);
 #endif
+		// Save ASA Values
+		stMPU9250_Bias.MAG_BIAS.x = ui32ReadBuffer[1];
+		stMPU9250_Bias.MAG_BIAS.y = ui32ReadBuffer[2];
+		stMPU9250_Bias.MAG_BIAS.z = ui32ReadBuffer[3];
 
 		/////////////////////////////////////////////////////////////////////////////
 
@@ -581,16 +597,6 @@ void MPU9250_Update9Axis()
 	// Word counter
 	// uint8_t ui8WordCounter = 0;
 
-	// Swap buffer identifier
-	if(0 == MPU9250_BufferVar)
-	{
-		MPU9250_BufferVar = 1;
-	}
-	else
-	{
-		MPU9250_BufferVar = 0;
-	}
-
 	// Read the FIFO Counter
 	ui32FifoCounter = MPU9250_ReadFIFOCount();
 
@@ -600,6 +606,9 @@ void MPU9250_Update9Axis()
 		//
 		// Read MPU9-9250 FIFO Values
 		//
+
+		// Increase buffer identifier
+		MPU9250_RBAddElement();
 
 		// Send command to read 7 bytes of sensor data from MPU-9250 - Bytes 1 to 7
 		ui32WriteBuffer[0] = MPU9250_O_FIFO_R_W | READ_FLAG;
@@ -616,7 +625,7 @@ void MPU9250_Update9Axis()
 		else
 		{
 			// Copy data to internal buffer
-			pu8DestinationPointer = UTILS_Memcpy( (uint8_t *)&stMPU9250_Values[MPU9250_BufferVar].ACCEL, &ui32ReadBuffer[1], SPI_FIFO_DATA_BYTES);
+			pu8DestinationPointer = UTILS_Memcpy( (uint8_t *)&stMPU9250_Values[ui8MPU9250_RBHead].ACCEL_RAW, &ui32ReadBuffer[1], SPI_FIFO_DATA_BYTES);
 
 			// Increase counter that indicates amount of bytes read
 			ui8ElementCounter = ui8ElementCounter + SPI_FIFO_DATA_BYTES;
@@ -700,17 +709,17 @@ void MPU9250_Update9Axis()
 		// Postprocessing of the data
 
 		// Swap bytes of the received values
-		_bswap_constant_uint16(stMPU9250_Values[MPU9250_BufferVar].ACCEL.x);
-		_bswap_constant_uint16(stMPU9250_Values[MPU9250_BufferVar].ACCEL.y);
-		_bswap_constant_uint16(stMPU9250_Values[MPU9250_BufferVar].ACCEL.z);
-		_bswap_constant_uint16(stMPU9250_Values[MPU9250_BufferVar].TEMP_MPU);
-		_bswap_constant_uint16(stMPU9250_Values[MPU9250_BufferVar].GYRO.x);
-		_bswap_constant_uint16(stMPU9250_Values[MPU9250_BufferVar].GYRO.y);
-		_bswap_constant_uint16(stMPU9250_Values[MPU9250_BufferVar].GYRO.z);
-		_bswap_constant_uint16(stMPU9250_Values[MPU9250_BufferVar].MAG.x);
-		_bswap_constant_uint16(stMPU9250_Values[MPU9250_BufferVar].MAG.y);
-		_bswap_constant_uint16(stMPU9250_Values[MPU9250_BufferVar].MAG.z);
-		_bswap_constant_uint16(stMPU9250_Values[MPU9250_BufferVar].TEMP_AK);
+		_bswap_constant_uint16(stMPU9250_Values[ui8MPU9250_RBHead].ACCEL_RAW.x);
+		_bswap_constant_uint16(stMPU9250_Values[ui8MPU9250_RBHead].ACCEL_RAW.y);
+		_bswap_constant_uint16(stMPU9250_Values[ui8MPU9250_RBHead].ACCEL_RAW.z);
+		_bswap_constant_uint16(stMPU9250_Values[ui8MPU9250_RBHead].TEMP_MPU);
+		_bswap_constant_uint16(stMPU9250_Values[ui8MPU9250_RBHead].GYRO_RAW.x);
+		_bswap_constant_uint16(stMPU9250_Values[ui8MPU9250_RBHead].GYRO_RAW.y);
+		_bswap_constant_uint16(stMPU9250_Values[ui8MPU9250_RBHead].GYRO_RAW.z);
+		_bswap_constant_uint16(stMPU9250_Values[ui8MPU9250_RBHead].MAG_RAW.x);
+		_bswap_constant_uint16(stMPU9250_Values[ui8MPU9250_RBHead].MAG_RAW.y);
+		_bswap_constant_uint16(stMPU9250_Values[ui8MPU9250_RBHead].MAG_RAW.z);
+		_bswap_constant_uint16(stMPU9250_Values[ui8MPU9250_RBHead].TEMP_AK);
 
 	}
 	else if (0 ==  ui32FifoCounter)
@@ -726,6 +735,9 @@ void MPU9250_Update9Axis()
 			// Send error message
 			UARTprintf("\nE: %d\n", ui32FifoCounter);
 #endif
+
+			// Check this implementation!
+			// is it better (faster) to clear FIFO?
 
 			while(ui32FifoCounter > 10)
 			{
@@ -810,6 +822,99 @@ uint32_t MPU9250_ReadFIFOCount()
 	return ui32FifoCounter;
 }
 
+//*****************************************************************************
+//		MPU9250_RBAddElement
+//*****************************************************************************
+
+void MPU9250_RBAddElement(void)
+{
+	// Check if the ring buffer head is not at the end of the buffer
+	if(ui8MPU9250_RBHead < (MPU9250_RB_SIZE - 1) )
+	{
+		// Check if the ring buffer is overrun
+		if(ui8MPU9250_RBTail == (ui8MPU9250_RBHead + 1) )
+		{
+			// Check if the ring buffer tail is not at the end of the buffer
+			if(ui8MPU9250_RBTail < (MPU9250_RB_SIZE - 1) )
+			{
+				// Move tail to loose oldest data
+				ui8MPU9250_RBTail++;
+			}
+			else
+			{
+				// Set tail to 0 to loose oldest data
+				ui8MPU9250_RBTail = 0;
+			}
+
+#ifdef DEBUG_CB
+			// Send error message
+			UARTprintf("\nError: MPU9250 Ring Buffer has been overrun\n");
+#endif
+		}
+
+		// Increase head counter
+		ui8MPU9250_RBHead++;
+	}
+	else
+	{
+		// Check if the ring buffer is overrun
+		if(ui8MPU9250_RBTail == 0)
+		{
+			// Move tail to loose oldest data
+			ui8MPU9250_RBTail++;
+
+#ifdef DEBUG_CB
+			// Send error message
+			UARTprintf("\nError: MPU9250 Ring Buffer has been overrun\n");
+#endif
+
+		}
+
+		// Set head to 0
+		ui8MPU9250_RBHead = 0;
+
+	}
+
+	// Increase element counter
+	ui8MPU9250_RBCount++;
+}
+
+//*****************************************************************************
+//		MPU9250_RBRemoveElement
+//*****************************************************************************
+
+bool MPU9250_RBRemoveElement(void)
+{
+	// Variable to store result
+	bool bMPU9250_Result = false;
+
+	// Check if the ring buffer has elements
+	if( ui8MPU9250_RBCount > 0 )
+	{
+		// Check if the ring buffer tail is not at the end of the buffer
+		if(ui8MPU9250_RBTail < (MPU9250_RB_SIZE - 1) )
+		{
+			// Move tail to next value
+			ui8MPU9250_RBTail++;
+		}
+		else
+		{
+			// Set tail to 0 (next value)
+			ui8MPU9250_RBTail = 0;
+		}
+
+		// Decrease element counter
+		ui8MPU9250_RBCount--;
+
+		// Signal the operation was succesful
+		bMPU9250_Result = true;
+	}
+
+	// Return result
+	return bMPU9250_Result;
+}
+
+
 /*
 // *****************************************************************************
 //		MPU9250_UpdateAccel
@@ -842,7 +947,7 @@ void MPU9250_UpdateAccel()
 	}
 	else
 	{
-		stMPU9250_Values[MPU9250_BufferVar].ACCEL.x = ui32ReadBuffer[1] << 8;
+		stMPU9250_Values[MPU9250_RBHead].ACCEL_RAW.x = ui32ReadBuffer[1] << 8;
 	}
 
 	// Delay between SPI Operations
@@ -862,7 +967,7 @@ void MPU9250_UpdateAccel()
 	}
 	else
 	{
-		stMPU9250_Values[MPU9250_BufferVar].ACCEL.x |= ui32ReadBuffer[1];
+		stMPU9250_Values[MPU9250_RBHead].ACCEL_RAW.x |= ui32ReadBuffer[1];
 	}
 
 	// Delay between SPI Operations
@@ -886,7 +991,7 @@ void MPU9250_UpdateAccel()
 	}
 	else
 	{
-		stMPU9250_Values[MPU9250_BufferVar].ACCEL.y = ui32ReadBuffer[1] << 8;
+		stMPU9250_Values[MPU9250_RBHead].ACCEL_RAW.y = ui32ReadBuffer[1] << 8;
 	}
 
 	// Delay between SPI Operations
@@ -906,7 +1011,7 @@ void MPU9250_UpdateAccel()
 	}
 	else
 	{
-		stMPU9250_Values[MPU9250_BufferVar].ACCEL.y |= ui32ReadBuffer[1];
+		stMPU9250_Values[MPU9250_RBHead].ACCEL_RAW.y |= ui32ReadBuffer[1];
 	}
 
 	// Delay between SPI Operations
@@ -930,7 +1035,7 @@ void MPU9250_UpdateAccel()
 	}
 	else
 	{
-		stMPU9250_Values[MPU9250_BufferVar].ACCEL.z = ui32ReadBuffer[1] << 8;
+		stMPU9250_Values[MPU9250_RBHead].ACCEL_RAW.z = ui32ReadBuffer[1] << 8;
 	}
 
 	// Delay between SPI Operations
@@ -950,7 +1055,7 @@ void MPU9250_UpdateAccel()
 	}
 	else
 	{
-		stMPU9250_Values[MPU9250_BufferVar].ACCEL.z |= ui32ReadBuffer[1];
+		stMPU9250_Values[MPU9250_RBHead].ACCEL_RAW.z |= ui32ReadBuffer[1];
 	}
 
 	// Delay between SPI Operations
@@ -988,7 +1093,7 @@ void MPU9250_UpdateGyro()
 	}
 	else
 	{
-		stMPU9250_Values[MPU9250_BufferVar].GYRO.x = ui32ReadBuffer[1] << 8;
+		stMPU9250_Values[MPU9250_RBHead].GYRO_RAW.x = ui32ReadBuffer[1] << 8;
 	}
 
 	// Delay between SPI Operations
@@ -1008,7 +1113,7 @@ void MPU9250_UpdateGyro()
 	}
 	else
 	{
-		stMPU9250_Values[MPU9250_BufferVar].GYRO.x |= ui32ReadBuffer[1];
+		stMPU9250_Values[MPU9250_RBHead].GYRO_RAW.x |= ui32ReadBuffer[1];
 	}
 
 	// Delay between SPI Operations
@@ -1032,7 +1137,7 @@ void MPU9250_UpdateGyro()
 	}
 	else
 	{
-		stMPU9250_Values[MPU9250_BufferVar].GYRO.y = ui32ReadBuffer[1] << 8;
+		stMPU9250_Values[MPU9250_RBHead].GYRO_RAW.y = ui32ReadBuffer[1] << 8;
 	}
 
 	// Delay between SPI Operations
@@ -1052,7 +1157,7 @@ void MPU9250_UpdateGyro()
 	}
 	else
 	{
-		stMPU9250_Values[MPU9250_BufferVar].GYRO.y |= ui32ReadBuffer[1];
+		stMPU9250_Values[MPU9250_RBHead].GYRO_RAW.y |= ui32ReadBuffer[1];
 	}
 
 	// Delay between SPI Operations
@@ -1077,7 +1182,7 @@ void MPU9250_UpdateGyro()
 	}
 	else
 	{
-		stMPU9250_Values[MPU9250_BufferVar].GYRO.z = ui32ReadBuffer[1] << 8;
+		stMPU9250_Values[MPU9250_RBHead].GYRO_RAW.z = ui32ReadBuffer[1] << 8;
 	}
 
 	// Delay between SPI Operations
@@ -1097,7 +1202,7 @@ void MPU9250_UpdateGyro()
 	}
 	else
 	{
-		stMPU9250_Values[MPU9250_BufferVar].GYRO.z |= ui32ReadBuffer[1];
+		stMPU9250_Values[MPU9250_RBHead].GYRO_RAW.z |= ui32ReadBuffer[1];
 	}
 
 	// Delay between SPI Operations

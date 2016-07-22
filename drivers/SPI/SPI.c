@@ -2,7 +2,7 @@
 //
 // SPI.c - SPI Driver
 //
-// Copyright (c) 2014 Raymundo Magaña Gomez - http://rmg.mx
+// Copyright (c) 2014 Raymundo Magaña Gomez - http://raymundomagana.webs.com/
 //
 // Software License Agreement
 //

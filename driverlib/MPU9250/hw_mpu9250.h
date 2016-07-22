@@ -3,7 +3,7 @@
 // hw_mpu9250.h - Macros used when accessing the Invensense MPU9250
 //                accelerometer/gyroscope/magnetometer.
 //
-// Copyright (c) 2014 Raymundo Magaña Gomez - http://rmg.mx
+// Copyright (c) 2014 Raymundo Magaña Gomez - http://raymundomagana.webs.com/
 //
 // Software License Agreement
 // 
