@@ -39,7 +39,11 @@ bool bUART_RSM_Enabled = false;
 bool bUART_LSM_Enabled = false;
 char cUARTDataTX = 0;
 char cUARTDataRX = 0;
-extern volatile int16_t ex, ey, ez;						// Integer representation of euler angles
+
+#ifdef DEBUG_CB
+// Variable to store status of debug pin
+bool TIMER_bTimer2Toggle = false;
+#endif
 
 //*****************************************************************************
 //
@@ -47,6 +51,7 @@ extern volatile int16_t ex, ey, ez;						// Integer representation of euler angl
 //
 //*****************************************************************************
 
+// Structures to hold Stepper Motor Handles
 extern struct STEP_Motor stLeft_Handle;
 extern struct STEP_Motor stRight_Handle;
 
@@ -65,6 +70,12 @@ extern uint8_t ui8MPU9250_RBTail;
 
 // Variable to store how many stMPU9250_Values entries are filled
 extern uint8_t ui8MPU9250_RBCount;
+
+// Integer representation of euler angles
+extern volatile int16_t ex, ey, ez;
+
+// Variable for 100 mSec Container
+extern bool C_10mS;
 
 //*****************************************************************************
 //
@@ -126,16 +137,52 @@ void main(void)
 			UART_Comm();
 		}
 
-		// Check if new IMU Data is available
-		if(ui8MPU9250_RBCount > 0)
+		// 100 ms Container
+		if(true == C_10mS)
 		{
-			// Get identifier of new element in ui8MPU9250_RBTail
-			MPU9250_RBRemoveElement();
 
-			// Obtain 9-DOF values from raw data
-			IMU_ProcessValues();
+#ifdef DEBUG_CB
+			// Signal start of cycle
+			GPIOPinWrite(DEBUG_PORT, DEBUG_PIN_2, DEBUG_PIN_2);
+#endif
 
+			// Check if new IMU Data is available
+			if(ui8MPU9250_RBCount > 0)
+			{
+				// Get identifier of new element in ui8MPU9250_RBTail
+				MPU9250_RBRemoveElement();
 
+				// Obtain 9-DOF values from raw data
+				IMU_ProcessValues();
+			}
+
+			// Reset container flag
+			C_10mS = false;
+
+#ifdef DEBUG_CB
+			// Signal end of cycle
+			GPIOPinWrite(DEBUG_PORT, DEBUG_PIN_2, 0);
+#endif
+
+#ifdef DEBUG_CB
+			// Toggle Debug Pin 1 to test container cycle
+			if(false == TIMER_bTimer2Toggle)
+			{
+				// Set Debug pin 1 to measure excecution time
+				GPIOPinWrite(DEBUG_PORT, DEBUG_PIN_1, DEBUG_PIN_1);
+
+				// Toggle variable
+				TIMER_bTimer2Toggle = true;
+			}
+			else
+			{
+				// Clear Debug pin 1 to measure excecution time
+				GPIOPinWrite(DEBUG_PORT, DEBUG_PIN_1, 0);
+
+				// Toggle variable
+				TIMER_bTimer2Toggle = false;
+			}
+#endif
 		}
 	}
 }
@@ -200,8 +247,8 @@ bool SYS_Init(void)
 	ROM_IntMasterDisable();
 
 	// Enable FPU
-	ROM_FPULazyStackingEnable();
-	ROM_FPUEnable();
+	//ROM_FPULazyStackingEnable();
+	//ROM_FPUEnable();
 
 	// Run at 80Mhz
 	ROM_SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);

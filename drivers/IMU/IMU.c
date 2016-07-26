@@ -78,10 +78,10 @@ extern uint8_t ui8MPU9250_RBCount;
 
 void IMU_IntHandler()
 {
-	// Variable to read
-
+#ifdef DEBUG_CB
 	// Set Debug pin 1 to measure excecution time
 	GPIOPinWrite(DEBUG_PORT, DEBUG_PIN_1, DEBUG_PIN_1);
+#endif
 
 	// Variable to store interrupt status
 	uint32_t ui32Status;
@@ -96,10 +96,9 @@ void IMU_IntHandler()
 	MPU9250_Update9Axis();
 
 #ifdef DEBUG_CB
-	// Set Debug pin 1 to measure excecution time
+	// Clear Debug pin 1 to measure excecution time
 	GPIOPinWrite(DEBUG_PORT, DEBUG_PIN_1, 0);
 #endif
-
 }
 
 //*****************************************************************************

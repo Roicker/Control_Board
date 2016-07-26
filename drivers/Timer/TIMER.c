@@ -15,6 +15,15 @@
 
 //*****************************************************************************
 //
+//		Global variables
+//
+//*****************************************************************************
+
+// Variable for 100 mSec Container
+bool C_10mS = false;
+
+//*****************************************************************************
+//
 //		Functions
 //
 //*****************************************************************************
@@ -33,11 +42,35 @@ void TIMER_IntHandler1(void)
 }
 
 //*****************************************************************************
+//	TIMER_IntHandler2
+//*****************************************************************************
+
+void TIMER_IntHandler2(void)
+{
+	// Clear the timer interrupt
+	TimerIntClear(TIMER2_BASE, TIMER_TIMA_TIMEOUT);
+
+	// Reset initial load of Timer 2
+	TimerLoadSet(TIMER2_BASE, TIMER_A, TIMER_IMU_CYCLE);
+
+	// Set container flag
+	C_10mS = true;
+}
+
+//*****************************************************************************
+//
+//		Functions
+//
+//*****************************************************************************
+
+//*****************************************************************************
 //	TIMER_Init
 //*****************************************************************************
 
 void TIMER_Init(void)
 {
+	// Timer 0
+
 	// Enable Timer 0 Peripheral
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
 
@@ -52,6 +85,8 @@ void TIMER_Init(void)
 
 	// Enable Timer 0
 	TimerEnable(TIMER0_BASE, TIMER_A);
+
+	// Timer 1
 
 	// Enable Timer 1 Peripheral
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);
@@ -73,4 +108,27 @@ void TIMER_Init(void)
 
 	// Enable timeout interrupts for Timer 1
 	TimerIntEnable(TIMER1_BASE, TIMER_TIMA_TIMEOUT);
+
+	// Timer 2
+
+	// Enable Timer 2 Peripheral
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER2);
+
+	// Configure Timer 2
+	TimerConfigure(TIMER2_BASE, TIMER_CFG_PERIODIC);
+
+	// Prepare initial load of Timer 2
+	TimerLoadSet(TIMER2_BASE, TIMER_A, TIMER_IMU_CYCLE);
+
+	// Select the Clock source for Timer 2
+	TimerClockSourceSet(TIMER2_BASE, TIMER_CLOCK_SYSTEM);
+
+	// Enable Timer 2
+	TimerEnable(TIMER2_BASE, TIMER_A);
+
+	// Enable interrupts for Timer 2
+	IntEnable(INT_TIMER2A);
+
+	// Enable timeout interrupts for Timer 2
+	TimerIntEnable(TIMER2_BASE, TIMER_TIMA_TIMEOUT);
 }

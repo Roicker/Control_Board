@@ -202,7 +202,7 @@ void DIST_IntHandler(void)
 	if(1 == u8DIST_EdgeCounter)
 	{
 		// Get timer value
-		u32DIST_EndTimer = TimerValueGet(TIMER0_BASE, TIMER_A);
+		u32DIST_EndTimer = TimerValueGet(TIMER0_BASE, TIMER_A); // Should this be TIMER1_BASE??
 		//u32DIST_EndTimer = HWREG(TIMER0_BASE + TIMER_O_TAR) : HWREG(ui32Base + TIMER_O_TBR);
 
 		// Calculate time
