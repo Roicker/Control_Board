@@ -51,7 +51,7 @@ int instability_fix = 1;
 // Structures to hold sensor data
 extern struct MS5611 stMS5611_Values;
 extern struct MPU9250 stMPU9250_Values[2];
-extern struct MPU9250_BIAS stMPU9250_Bias;
+extern struct MPU9250_CAL stMPU9250_Cal;
 
 // Calibration flags
 extern bool bAccGyro_Calibrated;
@@ -78,7 +78,7 @@ extern uint8_t ui8MPU9250_RBCount;
 
 void IMU_IntHandler()
 {
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 	// Set Debug pin 1 to measure excecution time
 	GPIOPinWrite(DEBUG_PORT, DEBUG_PIN_1, DEBUG_PIN_1);
 #endif
@@ -95,7 +95,7 @@ void IMU_IntHandler()
 	// Read MPU-9250 FIFO
 	MPU9250_Update9Axis();
 
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 	// Clear Debug pin 1 to measure excecution time
 	GPIOPinWrite(DEBUG_PORT, DEBUG_PIN_1, 0);
 #endif
@@ -116,7 +116,7 @@ void IMU_Init()
 	// Initialize SPI
 	if( false == SPI_Init(IMU_SPI_MODULE) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: SPI Init failed!\n");
 #endif
@@ -169,7 +169,7 @@ void IMU_UpdateValues()
 	MS5611_UpdatePressure();
 	MS5611_UpdateTemp();
 
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 	// Print IMU Variable Values
 
 	// MPU9250 Values
@@ -206,12 +206,21 @@ void IMU_ProcessValues()
 	stMPU9250_Values[ui8MPU9250_RBTail].MAG.z = - ((float) (stMPU9250_Values[ui8MPU9250_RBTail].MAG_RAW.z * MPU9250_MAG_SCALE));
 
 	// Compensate Magnetometer values with the sensitivity data
-	stMPU9250_Values[ui8MPU9250_RBTail].MAG.x *= (float) (stMPU9250_Bias.MAG_SENS.x);
-	stMPU9250_Values[ui8MPU9250_RBTail].MAG.y *= (float) (stMPU9250_Bias.MAG_SENS.y);
-	stMPU9250_Values[ui8MPU9250_RBTail].MAG.z *= (float) (stMPU9250_Bias.MAG_SENS.z);
+	stMPU9250_Values[ui8MPU9250_RBTail].MAG.x *= (float) (stMPU9250_Cal.MAG_SENS.x);
+	stMPU9250_Values[ui8MPU9250_RBTail].MAG.y *= (float) (stMPU9250_Cal.MAG_SENS.y);
+	stMPU9250_Values[ui8MPU9250_RBTail].MAG.z *= (float) (stMPU9250_Cal.MAG_SENS.z);
+
+	// Send Accel, Gyro and Mag data
+	//IMU_SendSensorData();
+
+	// Compensate errors (Accel and Mag Offset, Gyro Bias)
+	IMU_CompensateSensorErrors();
+
+	// Do AHRS Processing
 
 	// Update Quaternion values
-	IMU_MadgwickAHRSupdate(stMPU9250_Values[ui8MPU9250_RBTail].GYRO.x, stMPU9250_Values[ui8MPU9250_RBTail].GYRO.y, stMPU9250_Values[ui8MPU9250_RBTail].GYRO.z, stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.x, stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.y, stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.z, stMPU9250_Values[ui8MPU9250_RBTail].MAG.x, stMPU9250_Values[ui8MPU9250_RBTail].MAG.y, stMPU9250_Values[ui8MPU9250_RBTail].MAG.z);
+	//IMU_MadgwickAHRSupdate(stMPU9250_Values[ui8MPU9250_RBTail].GYRO.x, stMPU9250_Values[ui8MPU9250_RBTail].GYRO.y, stMPU9250_Values[ui8MPU9250_RBTail].GYRO.z, stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.x, stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.y, stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.z, stMPU9250_Values[ui8MPU9250_RBTail].MAG.x, stMPU9250_Values[ui8MPU9250_RBTail].MAG.y, stMPU9250_Values[ui8MPU9250_RBTail].MAG.z);
+	IMU_MadgwickAHRSupdateIMU(stMPU9250_Values[ui8MPU9250_RBTail].GYRO.x, stMPU9250_Values[ui8MPU9250_RBTail].GYRO.y, stMPU9250_Values[ui8MPU9250_RBTail].GYRO.z, stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.x, stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.y, stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.z);
 
 	// Calculate Euler angles
 	IMU_ComputeAngles();
@@ -225,37 +234,193 @@ void IMU_ProcessValues()
 	ex = lrintf(fex);
 	ey = lrintf(fey);
 	ez = lrintf(fez);
+}
 
-/*	// Check if system should be calibrated
-	if(!bAccGyro_Calibrated)
+//*****************************************************************************
+//		IMU_SendSensorData
+//*****************************************************************************
+
+void IMU_SendSensorData()
+{
+	// Integers
+	int16_t xi = 0;
+	int16_t yi = 0;
+	int16_t zi = 0;
+
+	// Decimals
+	uint32_t xr = 0;
+	uint32_t yr = 0;
+	uint32_t zr = 0;
+
+	// Accelerometer data //
+
+	xi = (int16_t)(stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.x);
+	xr = (uint32_t)( fabsf((stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.x - xi) * IMU_DECIMALS_FACTOR ));
+
+	// Check if the number is -0.xxxxx
+	if( (stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.x < 0) && (0 == xi) )
 	{
-		// Call calibration function for Accel and Gyro
-		IMU_CalibrateGyroAccel();
+		// Send the Accel value for the x axis with a negative sign
+		UARTprintf("\n-%d.%04u, ",xi,xr);
 	}
 	else
 	{
-		// Correct bias
-
-		// Accelerometer
-		stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.x = stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.x - stMPU9250_Bias.ACCEL_BIAS.x;
-		stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.y = stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.y - stMPU9250_Bias.ACCEL_BIAS.y;
-		stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.z = stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.z - stMPU9250_Bias.ACCEL_BIAS.z;
-
-		// Gyroscope
-		stMPU9250_Values[ui8MPU9250_RBTail].GYRO.x = stMPU9250_Values[ui8MPU9250_RBTail].GYRO.x - stMPU9250_Bias.GYRO_BIAS.x;
-		stMPU9250_Values[ui8MPU9250_RBTail].GYRO.y = stMPU9250_Values[ui8MPU9250_RBTail].GYRO.y - stMPU9250_Bias.GYRO_BIAS.z;
-		stMPU9250_Values[ui8MPU9250_RBTail].GYRO.z = stMPU9250_Values[ui8MPU9250_RBTail].GYRO.z - stMPU9250_Bias.GYRO_BIAS.z;
+		// Send the Accel value for the x axis
+		UARTprintf("\n%d.%04u, ",xi,xr);
 	}
 
-	if(!bMag_Calibrated)
+	yi = (int16_t)(stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.y);
+	yr = (uint32_t)( fabsf((stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.y - yi) * IMU_DECIMALS_FACTOR ));
+
+	// Check if the number is -0.xxxxx
+	if( (stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.y < 0) && (0 == yi) )
 	{
-		// Call calibration function for Mag
-		IMU_CalibrateMag();
+		// Send the Accel value for the y axis with a negative sign
+		UARTprintf("-%d.%04u, ",yi,yr);
 	}
 	else
 	{
-		// What to do here?
-	}*/
+		// Send the Accel value for the y axis
+		UARTprintf("%d.%04u, ",yi,yr);
+	}
+
+	zi = (int16_t)(stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.z);
+	zr = (uint32_t)( fabsf((stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.z - zi) * IMU_DECIMALS_FACTOR ));
+
+	// Check if the number is -0.xxxxx
+	if( (stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.z < 0) && (0 == zi) )
+	{
+		// Send the Accel value for the z axis with a negative sign
+		UARTprintf("-%d.%04u, ",zi,zr);
+	}
+	else
+	{
+		// Send the Accel value for the x axis
+		UARTprintf("%d.%04u, ",zi,zr);
+	}
+
+	// Send the current Accel values
+	//UARTprintf("\n%d.%04u, %d.%04u, %d.%04u, ",xi,xr,yi,yr,zi,zr);
+
+	// Gyroscope data
+	xi = (int16_t)(stMPU9250_Values[ui8MPU9250_RBTail].GYRO.x);
+	xr = (uint32_t)( fabsf((stMPU9250_Values[ui8MPU9250_RBTail].GYRO.x - xi) * IMU_DECIMALS_FACTOR ));
+
+	// Check if the number is -0.xxxxx
+	if( (stMPU9250_Values[ui8MPU9250_RBTail].GYRO.x < 0) && (0 == xi) )
+	{
+		// Send the Gyro value for the x axis with a negative sign
+		UARTprintf("-%d.%04u, ",xi,xr);
+	}
+	else
+	{
+		// Send the Gyro value for the x axis
+		UARTprintf("%d.%04u, ",xi,xr);
+	}
+
+	yi = (int16_t)(stMPU9250_Values[ui8MPU9250_RBTail].GYRO.y);
+	yr = (uint32_t)( fabsf((stMPU9250_Values[ui8MPU9250_RBTail].GYRO.y - yi) * IMU_DECIMALS_FACTOR ));
+
+	// Check if the number is -0.xxxxx
+	if( (stMPU9250_Values[ui8MPU9250_RBTail].GYRO.y < 0) && (0 == yi) )
+	{
+		// Send the Gyro value for the y axis with a negative sign
+		UARTprintf("-%d.%04u, ",yi,yr);
+	}
+	else
+	{
+		// Send the Gyro value for the y axis
+		UARTprintf("%d.%04u, ",yi,yr);
+	}
+
+	zi = (int16_t)(stMPU9250_Values[ui8MPU9250_RBTail].GYRO.z);
+	zr = (uint32_t)( fabsf((stMPU9250_Values[ui8MPU9250_RBTail].GYRO.z - zi) * IMU_DECIMALS_FACTOR ));
+
+	// Check if the number is -0.xxxxx
+	if( (stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.z < 0) && (0 == zi) )
+	{
+		// Send the Gyro value for the z axis with a negative sign
+		UARTprintf("-%d.%04u, ",zi,zr);
+	}
+	else
+	{
+		// Send the Gyro value for the x axis
+		UARTprintf("%d.%04u, ",zi,zr);
+	}
+
+	// Send the current Gyro values
+	//UARTprintf("%d.%04u, %d.%04u, %d.%04u, ",xi,xr,yi,yr,zi,zr);
+
+	// Magnetometer data
+	xi = (int16_t)(stMPU9250_Values[ui8MPU9250_RBTail].MAG.x);
+	xr = (uint32_t)( fabsf((stMPU9250_Values[ui8MPU9250_RBTail].MAG.x - xi) * IMU_DECIMALS_FACTOR ));
+
+	// Check if the number is -0.xxxxx
+	if( (stMPU9250_Values[ui8MPU9250_RBTail].MAG.x < 0) && (0 == xi) )
+	{
+		// Send the Mag value for the x axis with a negative sign
+		UARTprintf("-%d.%04u, ",xi,xr);
+	}
+	else
+	{
+		// Send the Mag value for the x axis
+		UARTprintf("%d.%04u, ",xi,xr);
+	}
+
+	yi = (int16_t)(stMPU9250_Values[ui8MPU9250_RBTail].MAG.y);
+	yr = (uint32_t)( fabsf((stMPU9250_Values[ui8MPU9250_RBTail].MAG.y - yi) * IMU_DECIMALS_FACTOR ));
+
+	// Check if the number is -0.xxxxx
+	if( (stMPU9250_Values[ui8MPU9250_RBTail].MAG.y < 0) && (0 == yi) )
+	{
+		// Send the Mag value for the y axis with a negative sign
+		UARTprintf("-%d.%04u, ",yi,yr);
+	}
+	else
+	{
+		// Send the Mag value for the y axis
+		UARTprintf("%d.%04u, ",yi,yr);
+	}
+
+	zi = (int16_t)(stMPU9250_Values[ui8MPU9250_RBTail].MAG.z);
+	zr = (uint32_t)( fabsf((stMPU9250_Values[ui8MPU9250_RBTail].MAG.z - zi) * IMU_DECIMALS_FACTOR ));
+
+	// Check if the number is -0.xxxxx
+	if( (stMPU9250_Values[ui8MPU9250_RBTail].MAG.z < 0) && (0 == zi) )
+	{
+		// Send the Mag value for the z axis with a negative sign
+		UARTprintf("-%d.%04u, ",zi,zr);
+	}
+	else
+	{
+		// Send the Mag value for the x axis
+		UARTprintf("%d.%04u\n",zi,zr);
+	}
+
+	// Send the current Mag values
+	//UARTprintf("%d.%04u, %d.%04u, %d.%04u\n",xi,xr,yi,yr,zi,zr);
+}
+
+//*****************************************************************************
+//		IMU_CompensateSensorErrors
+//*****************************************************************************
+
+void IMU_CompensateSensorErrors()
+{
+	// Compensate Accelerometer offset
+	stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.x = stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.x - stMPU9250_Cal.ACCEL_OFFSET.x;
+	stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.y = stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.y - stMPU9250_Cal.ACCEL_OFFSET.y;
+	stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.z = stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.z - stMPU9250_Cal.ACCEL_OFFSET.z;
+
+	// Correct Gyro bias
+	stMPU9250_Values[ui8MPU9250_RBTail].GYRO.x = stMPU9250_Values[ui8MPU9250_RBTail].GYRO.x - stMPU9250_Cal.GYRO_BIAS.x;
+	stMPU9250_Values[ui8MPU9250_RBTail].GYRO.y = stMPU9250_Values[ui8MPU9250_RBTail].GYRO.y - stMPU9250_Cal.GYRO_BIAS.z;
+	stMPU9250_Values[ui8MPU9250_RBTail].GYRO.z = stMPU9250_Values[ui8MPU9250_RBTail].GYRO.z - stMPU9250_Cal.GYRO_BIAS.z;
+
+	// Compensate Accelerometer offset
+	stMPU9250_Values[ui8MPU9250_RBTail].MAG.x = stMPU9250_Values[ui8MPU9250_RBTail].MAG.x - stMPU9250_Cal.MAG_OFFSET.x;
+	stMPU9250_Values[ui8MPU9250_RBTail].MAG.y = stMPU9250_Values[ui8MPU9250_RBTail].MAG.y - stMPU9250_Cal.MAG_OFFSET.y;
+	stMPU9250_Values[ui8MPU9250_RBTail].MAG.z = stMPU9250_Values[ui8MPU9250_RBTail].MAG.z - stMPU9250_Cal.MAG_OFFSET.z;
 }
 
 //*****************************************************************************
@@ -267,14 +432,14 @@ void IMU_CalibrateGyroAccel()
 	if(IMU_u8AccelGyro_Counter < IMU_ACC_GYRO_CAL_CYCLES)
 	{
 		// Create sum of all read Accel values
-		stMPU9250_Bias.ACCEL_BIAS.x += (float) stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.x;
-		stMPU9250_Bias.ACCEL_BIAS.y += (float) stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.y;
-		stMPU9250_Bias.ACCEL_BIAS.z += (float) stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.z;
+		stMPU9250_Cal.ACCEL_OFFSET.x += (float) stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.x;
+		stMPU9250_Cal.ACCEL_OFFSET.y += (float) stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.y;
+		stMPU9250_Cal.ACCEL_OFFSET.z += (float) stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.z;
 
 		// Create sum of all read Gyro values
-		stMPU9250_Bias.GYRO_BIAS.x += (float) stMPU9250_Values[ui8MPU9250_RBTail].GYRO.x;
-		stMPU9250_Bias.GYRO_BIAS.y += (float) stMPU9250_Values[ui8MPU9250_RBTail].GYRO.y;
-		stMPU9250_Bias.GYRO_BIAS.z += (float) stMPU9250_Values[ui8MPU9250_RBTail].GYRO.z;
+		stMPU9250_Cal.GYRO_BIAS.x += (float) stMPU9250_Values[ui8MPU9250_RBTail].GYRO.x;
+		stMPU9250_Cal.GYRO_BIAS.y += (float) stMPU9250_Values[ui8MPU9250_RBTail].GYRO.y;
+		stMPU9250_Cal.GYRO_BIAS.z += (float) stMPU9250_Values[ui8MPU9250_RBTail].GYRO.z;
 
 		// Increase counter
 		IMU_u8AccelGyro_Counter++;
@@ -288,16 +453,16 @@ void IMU_CalibrateGyroAccel()
 		bAccGyro_Calibrated = true;
 
 		// Normalize sums to get average bias
-		stMPU9250_Bias.ACCEL_BIAS.x /= (float) IMU_ACC_GYRO_CAL_CYCLES;
-		stMPU9250_Bias.ACCEL_BIAS.z /= (float) IMU_ACC_GYRO_CAL_CYCLES;
-		stMPU9250_Bias.ACCEL_BIAS.y /= (float) IMU_ACC_GYRO_CAL_CYCLES;
+		stMPU9250_Cal.ACCEL_OFFSET.x /= (float) IMU_ACC_GYRO_CAL_CYCLES;
+		stMPU9250_Cal.ACCEL_OFFSET.z /= (float) IMU_ACC_GYRO_CAL_CYCLES;
+		stMPU9250_Cal.ACCEL_OFFSET.y /= (float) IMU_ACC_GYRO_CAL_CYCLES;
 
 		// Normalize sums to get average bias
-		stMPU9250_Bias.GYRO_BIAS.x /= (float) IMU_ACC_GYRO_CAL_CYCLES;
-		stMPU9250_Bias.GYRO_BIAS.y /= (float) IMU_ACC_GYRO_CAL_CYCLES;
-		stMPU9250_Bias.GYRO_BIAS.z /= (float) IMU_ACC_GYRO_CAL_CYCLES;
+		stMPU9250_Cal.GYRO_BIAS.x /= (float) IMU_ACC_GYRO_CAL_CYCLES;
+		stMPU9250_Cal.GYRO_BIAS.y /= (float) IMU_ACC_GYRO_CAL_CYCLES;
+		stMPU9250_Cal.GYRO_BIAS.z /= (float) IMU_ACC_GYRO_CAL_CYCLES;
 
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Print message to signal that Gyro and Accel calibration is complete
 		UARTprintf("\n\n Calibration of Accelerometer and Gyro is complete");
 		UARTprintf("\n\nCommand: ");

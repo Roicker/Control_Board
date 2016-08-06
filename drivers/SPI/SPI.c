@@ -130,7 +130,7 @@ bool SPI_Init(uint8_t ui8SPI_Module_Sel)
 	case SPI_MODULE_3:
 		// If needed, other SPI Modules (2 or 3) can be configured. This proyect uses the Module 1 (previously 0) for the IMU.
 	default:
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: Selected SPI Module is not available\n");
 #endif
@@ -155,7 +155,7 @@ bool SPI_Write(struct SPI_Slave* stDeviceHandle, uint32_t* ui32WriteBuffer, uint
 	// Check the input parameters - Is the test (0 == stDeviceHandle.ui32SPI_BaseAddress) necessary?
 	if( (NULL == ui32WriteBuffer) || (0 == stDeviceHandle->ui32SPI_BaseAddress) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: Input parameters for SPI_Write are invalid\n");
 #endif

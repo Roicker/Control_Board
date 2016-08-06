@@ -114,7 +114,7 @@ void DIST_Measure(struct DIST_Sensor* stSensorHandle)
 {
 	if(stSensorHandle == NULL)
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: Distance Sensor doesn't exist. Check pointer sent to DIST_Measure.\n");
 #endif
@@ -157,7 +157,7 @@ void DIST_UpdateDistance(void)
 		u32DIST_DistDS1Int = (uint32_t)( floor(fDIST_DistanceDS1) );
 		u32DIST_DistDS1Frac =  (uint32_t)( (fDIST_DistanceDS1 - u32DIST_DistDS1Int) * 1000000 );
 
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Print Distance Values
 		UARTprintf("\n\n DS1: %d.%d \n", u32DIST_DistDS1Int, u32DIST_DistDS1Frac);
 #endif

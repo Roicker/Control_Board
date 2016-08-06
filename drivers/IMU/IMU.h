@@ -41,6 +41,8 @@
 #define IMU_SAMPLE_FREQ				100.0f						// Sample frequency in Hz
 #define IMU_BETA_DEF				0.1f						// 2 * Proportional gain
 
+#define IMU_DECIMALS_FACTOR			10000						// The amount of zeros represent the amount of decimals to be printed
+
 //*****************************************************************************
 //
 //		Function Prototypes
@@ -57,5 +59,7 @@ void IMU_MadgwickAHRSupdate(float gx, float gy, float gz, float ax, float ay, fl
 void IMU_MadgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, float az);
 float IMU_invSqrt(float x);
 void IMU_ComputeAngles(void);
+void IMU_CompensateSensorErrors(void);
+void IMU_SendSensorData(void);
 
 #endif /* IMU_H_ */

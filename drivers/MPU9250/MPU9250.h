@@ -44,7 +44,7 @@
 #define MPU9250_ACC_SCALE_16G		1.0/2048.0
 
 // Gyroscope Scale
-#define MPU9250_GYRO_SCALE			MPU9250_GYRO_SCALE_2000_RAD
+#define MPU9250_GYRO_SCALE			MPU9250_GYRO_SCALE_500_RAD
 
 // Possible Gyroscope scale values
 #define MPU9250_GYRO_SCALE_250_DEG		1 / 131.0
@@ -63,10 +63,41 @@
 #define MPU9250_MAG_SCALE_14		0.6f
 #define MPU9250_MAG_SCALE_16		0.15f
 
+// Calibration Values //
+
 // Sensitivity values read from Magnetometer
 #define MPU9250_MAG_SENS_X			(177.0 - 128.0) / 256.0 + 1.0f
 #define MPU9250_MAG_SENS_Y			(178.0 - 128.0) / 256.0 + 1.0f
 #define MPU9250_MAG_SENS_Z			(166.0 - 128.0) / 256.0 + 1.0f
+
+#define ACCEL_X_OFFSET ((ACCEL_X_MIN + ACCEL_X_MAX) / 2.0f)		// Accelerometer offset values
+#define ACCEL_Y_OFFSET ((ACCEL_Y_MIN + ACCEL_Y_MAX) / 2.0f)
+#define ACCEL_Z_OFFSET ((ACCEL_Z_MIN + ACCEL_Z_MAX) / 2.0f)
+
+#define MAG_X_OFFSET ((MAG_X_MIN + MAG_X_MAX) / 2.0f)			// Magnetometer offset values
+#define MAG_Y_OFFSET ((MAG_Y_MIN + MAG_Y_MAX) / 2.0f)
+#define MAG_Z_OFFSET ((MAG_Z_MIN + MAG_Z_MAX) / 2.0f)
+
+// "Accel x,y,z (min/max) = -1.0068/1.0212  -1.0078/1.0249  -0.9982/1.0361"
+#define ACCEL_X_MIN ((float) -1.0068)
+#define ACCEL_X_MAX ((float) 1.0212)
+#define ACCEL_Y_MIN ((float) -1.0078)
+#define ACCEL_Y_MAX ((float) 1.0249)
+#define ACCEL_Z_MIN ((float) -0.9982)
+#define ACCEL_Z_MAX ((float) 1.0361)
+
+// "Mag x,y,z (min/max) = 54.2138/87.7458  -5.0474/51.4555  -58.144/33.7739"
+#define MAG_X_MIN ((float) 54.2138)
+#define MAG_X_MAX ((float) 87.7458)
+#define MAG_Y_MIN ((float) -5.0474)
+#define MAG_Y_MAX ((float) 51.4555)
+#define MAG_Z_MIN ((float) -58.144)
+#define MAG_Z_MAX ((float) 33.7739)
+
+//"Gyro x,y,z (current/average) = -40.00/-42.05  98.00/96.20  -18.00/-18.36"
+#define GYRO_X_OFFSET ((float) 0.01283)
+#define GYRO_Y_OFFSET ((float) 0.01763)
+#define GYRO_Z_OFFSET ((float) 0.0036)
 
 //*****************************************************************************
 //
@@ -123,7 +154,7 @@ struct Magnetometer
 	float z;
 };
 
-struct Accel_Bias
+struct Accel_Offset
 {
 	float x;
 	float y;
@@ -151,6 +182,13 @@ struct Mag_Sensitivity
 	float z;
 };
 
+struct Mag_Offset
+{
+	float x;
+	float y;
+	float z;
+};
+
 struct MPU9250
 {
 	struct Accelerometer_Raw ACCEL_RAW;
@@ -163,12 +201,13 @@ struct MPU9250
 	struct Magnetometer MAG;
 };
 
-struct MPU9250_BIAS
+struct MPU9250_CAL
 {
-	struct Accel_Bias ACCEL_BIAS;
+	struct Accel_Offset ACCEL_OFFSET;
 	struct Gyro_Bias GYRO_BIAS;
-	struct Mag_Raw_Bias MAG_BIAS;
-	struct Mag_Sensitivity MAG_SENS;
+	struct Mag_Raw_Bias MAG_BIAS;			// Store ASA values read from Magnetometer (Values are not used on RT because they are static)
+	struct Mag_Sensitivity MAG_SENS;		// Sensitivity values calculated from ASA values are stored here
+	struct Mag_Offset MAG_OFFSET;
 };
 
 //*****************************************************************************

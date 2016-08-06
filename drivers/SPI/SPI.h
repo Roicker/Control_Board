@@ -27,8 +27,8 @@
 #define SPI_MODULE_2				2
 #define SPI_MODULE_3				3
 
-#define SPI_DELAY					750  // 700
-#define I2C_DELAY					7000 // 6000
+#define SPI_DELAY					800  // 700
+#define I2C_DELAY					8000 // 6000
 
 #define SPI_COMM_LENGTH				8										// Possible values [16]
 #define SPI_COMM_LENGTH_BYTES		(SPI_COMM_LENGTH/8)

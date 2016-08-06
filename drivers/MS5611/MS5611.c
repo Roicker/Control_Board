@@ -77,7 +77,7 @@ void MS5611_Init()
 		// Receive 3 Byte response and store them in the same variable
 		if ( false == SPI_ReadFIFO(&stMS5611_Handle, ui32ReadBuffer, 3) )
 		{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 			// Send error message
 			UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -128,7 +128,7 @@ void MS5611_UpdatePressure()
 	// Receive 4 Byte response and store them in the same variable
 	if ( false == SPI_ReadFIFO(&stMS5611_Handle, ui32ReadBuffer, 4) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -166,7 +166,7 @@ void MS5611_UpdateTemp()
 	// Receive 4 Byte response and store them in the same variable
 	if ( false == SPI_ReadFIFO(&stMS5611_Handle, ui32ReadBuffer, 4) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif

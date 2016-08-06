@@ -32,7 +32,7 @@
 // Structures to hold sensor data
 struct SPI_Slave stMPU9250_Handle = {IMU_SPI_BASE, CS_MPU9250_PORT, CS_MPU9250_PIN};
 struct MPU9250 stMPU9250_Values[MPU9250_RB_SIZE];
-struct MPU9250_BIAS stMPU9250_Bias = {0,0,0,0,0,0,0,0,0,MPU9250_MAG_SENS_X,MPU9250_MAG_SENS_Y,MPU9250_MAG_SENS_Z};
+struct MPU9250_CAL stMPU9250_Cal = {ACCEL_X_OFFSET,ACCEL_Y_OFFSET,ACCEL_Z_OFFSET,GYRO_X_OFFSET,GYRO_Y_OFFSET,GYRO_Z_OFFSET,0,0,0,MPU9250_MAG_SENS_X,MPU9250_MAG_SENS_Y,MPU9250_MAG_SENS_Z,MAG_X_OFFSET,MAG_Y_OFFSET,MAG_Z_OFFSET};
 
 // Variable to store which stMPU9250_Values is currently head
 uint8_t ui8MPU9250_RBHead = 0;
@@ -108,7 +108,7 @@ void MPU9250_Init()
 		// Read Data from RX FIFO
 		if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 		{
-	#ifdef DEBUG_CB
+	#ifdef DEBUG_CB_CONSOLE
 			// Send error message
 			UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 	#endif
@@ -130,7 +130,7 @@ void MPU9250_Init()
 	// Read Data from RX FIFO
 	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -146,11 +146,6 @@ void MPU9250_Init()
 
 		// Delay between SPI Operations
 		SysCtlDelay(SPI_DELAY);
-
-//		// Disable I2C Slave
-//		ui32WriteBuffer[0] = MPU9250_O_USER_CTRL;
-//		ui32WriteBuffer[1] = MPU9250_USER_CTRL_I2C_IF_DIS;
-//		SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
 
 		// Delay between SPI Operations
 		SysCtlDelay(SPI_DELAY);
@@ -171,9 +166,9 @@ void MPU9250_Init()
 		// Delay between SPI Operations
 		SysCtlDelay(SPI_DELAY);
 
-		// Config GYRO +-2000dps (Full Range)
+		// Config GYRO +-500dps
 		ui32WriteBuffer[0] = MPU9250_O_GYRO_CONFIG;
-		ui32WriteBuffer[1] = MPU9250_GYRO_CONFIG_FS_SEL_2000;
+		ui32WriteBuffer[1] = MPU9250_GYRO_CONFIG_FS_SEL_500;
 		SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
 
 		// Delay between SPI Operations
@@ -181,7 +176,6 @@ void MPU9250_Init()
 
 		// Config ACC +-4G
 		ui32WriteBuffer[0] = MPU9250_O_ACCEL_CONFIG;
-		//ui32WriteBuffer[1] = MPU9250_ACCEL_CONFIG_AFS_SEL_2G;
 		ui32WriteBuffer[1] = MPU9250_ACCEL_CONFIG_AFS_SEL_4G;
 		SPI_Write(&stMPU9250_Handle, ui32WriteBuffer, 2);
 
@@ -334,7 +328,7 @@ void MPU9250_Init()
 		// Read Data from RX FIFO
 		if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 		{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 			// Send error message
 			UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -343,7 +337,7 @@ void MPU9250_Init()
 		// Check that the device ID of the AK8963 is = 0x48. If the ID is not 0x48 the device is not working properly
 		if(AK8963_DEVICE_ID != ui32ReadBuffer[1])
 		{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 			// Send error message
 			UARTprintf("\nError: AK8963 ID is not 0x48. ID read is: %x\n", ui32ReadBuffer[1]);
 #endif
@@ -397,21 +391,21 @@ void MPU9250_Init()
 		// Read Data from RX FIFO
 		if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 4) )
 		{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 			// Send error message
 			UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
 		}
 
 		// Print device sensitivity
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\n\n ASAX: %d  ASAY: %d  ASAZ: %d\n", ui32ReadBuffer[1], ui32ReadBuffer[2], ui32ReadBuffer[3]);
 #endif
 		// Save ASA Values
-		stMPU9250_Bias.MAG_BIAS.x = ui32ReadBuffer[1];
-		stMPU9250_Bias.MAG_BIAS.y = ui32ReadBuffer[2];
-		stMPU9250_Bias.MAG_BIAS.z = ui32ReadBuffer[3];
+		stMPU9250_Cal.MAG_BIAS.x = ui32ReadBuffer[1];
+		stMPU9250_Cal.MAG_BIAS.y = ui32ReadBuffer[2];
+		stMPU9250_Cal.MAG_BIAS.z = ui32ReadBuffer[3];
 
 		/////////////////////////////////////////////////////////////////////////////
 
@@ -568,7 +562,7 @@ void MPU9250_Init()
 	}
 	else
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Return error! The Device ID is not 0x71!
 		UARTprintf("\nError: The Device ID of sensor MPU9250 is not 0x71\n");
 #endif
@@ -617,7 +611,7 @@ void MPU9250_Update9Axis()
 		// Read Data from RX FIFO
 		if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, SPI_FIFO_LENGTH) )
 		{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 			// Send error message
 			UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -641,7 +635,7 @@ void MPU9250_Update9Axis()
 		// Read Data from RX FIFO
 		if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, SPI_FIFO_LENGTH) )
 		{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 			// Send error message
 			UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -665,7 +659,7 @@ void MPU9250_Update9Axis()
 		// Read Data from RX FIFO
 		if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, SPI_FIFO_LENGTH) )
 		{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 			// Send error message
 			UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -689,7 +683,7 @@ void MPU9250_Update9Axis()
 		// Read Data from RX FIFO
 		if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 		{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 			// Send error message
 			UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -725,13 +719,13 @@ void MPU9250_Update9Axis()
 	else if (0 ==  ui32FifoCounter)
 	{
 		// Do nothing
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		UARTprintf("\nE: FIFO Empty\n");
 #endif
 	}
 	else
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 			// Send error message
 			UARTprintf("\nE: %d\n", ui32FifoCounter);
 #endif
@@ -785,7 +779,7 @@ uint32_t MPU9250_ReadFIFOCount()
 	// Read Data from RX FIFO
 	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -805,7 +799,7 @@ uint32_t MPU9250_ReadFIFOCount()
 	// Read Data from RX FIFO
 	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -846,7 +840,7 @@ void MPU9250_RBAddElement(void)
 				ui8MPU9250_RBTail = 0;
 			}
 
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 			// Send error message
 			UARTprintf("\nError: MPU9250 Ring Buffer has been overrun\n");
 #endif
@@ -863,7 +857,7 @@ void MPU9250_RBAddElement(void)
 			// Move tail to loose oldest data
 			ui8MPU9250_RBTail++;
 
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 			// Send error message
 			UARTprintf("\nError: MPU9250 Ring Buffer has been overrun\n");
 #endif
@@ -940,7 +934,7 @@ void MPU9250_UpdateAccel()
 	// Read Data from RX FIFO
 	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -960,7 +954,7 @@ void MPU9250_UpdateAccel()
 	// Read Data from RX FIFO
 	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -984,7 +978,7 @@ void MPU9250_UpdateAccel()
 	// Read Data from RX FIFO
 	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -1004,7 +998,7 @@ void MPU9250_UpdateAccel()
 	// Read Data from RX FIFO
 	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -1028,7 +1022,7 @@ void MPU9250_UpdateAccel()
 	// Read Data from RX FIFO
 	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -1048,7 +1042,7 @@ void MPU9250_UpdateAccel()
 	// Read Data from RX FIFO
 	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -1086,7 +1080,7 @@ void MPU9250_UpdateGyro()
 	// Read Data from RX FIFO
 	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -1106,7 +1100,7 @@ void MPU9250_UpdateGyro()
 	// Read Data from RX FIFO
 	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -1130,7 +1124,7 @@ void MPU9250_UpdateGyro()
 	// Read Data from RX FIFO
 	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -1150,7 +1144,7 @@ void MPU9250_UpdateGyro()
 	// Read Data from RX FIFO
 	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -1175,7 +1169,7 @@ void MPU9250_UpdateGyro()
 	// Read Data from RX FIFO
 	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif
@@ -1195,7 +1189,7 @@ void MPU9250_UpdateGyro()
 	// Read Data from RX FIFO
 	if ( false == SPI_ReadFIFO(&stMPU9250_Handle, ui32ReadBuffer, 2) )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: FIFO doesn't contain the amount of Bytes expected\n");
 #endif

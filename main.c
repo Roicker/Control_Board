@@ -40,7 +40,7 @@ bool bUART_LSM_Enabled = false;
 char cUARTDataTX = 0;
 char cUARTDataRX = 0;
 
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 // Variable to store status of debug pin
 bool TIMER_bTimer2Toggle = false;
 #endif
@@ -91,7 +91,7 @@ void main(void)
 {
 	if ( false == SYS_Init() )
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send error message
 		UARTprintf("\nError: Init failed!\n");
 #endif
@@ -110,12 +110,12 @@ void main(void)
 	}
 	else
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Send success message
 		UARTprintf("\n\nInit Successful!\n");
 #endif
 	}
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 	// Init Console
 	UARTprintf("\nSelect desired command:\n 1 - Enable/Disable Right Stepper\n 2 - Enable/Disable Left Stepper\n 3 - Reverse Right Stepper\n 4 - Reverse Left Stepper");
 	UARTprintf("\n 5 - Read RAW IMU Values\n 6 - Enable SM Driver\n 7 - Disable SM Driver\n 8 - Read Distance\n 9 - Calibrate Accel and Gyro\n A - Calibrate Mag\n\nCommand: ");
@@ -124,7 +124,7 @@ void main(void)
 	// Main Loop
 	while(1)
 	{
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Call test routine
 		TEST_main();
 #endif
@@ -141,7 +141,7 @@ void main(void)
 		if(true == C_10mS)
 		{
 
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 			// Signal start of cycle
 			GPIOPinWrite(DEBUG_PORT, DEBUG_PIN_2, DEBUG_PIN_2);
 #endif
@@ -159,12 +159,12 @@ void main(void)
 			// Reset container flag
 			C_10mS = false;
 
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 			// Signal end of cycle
 			GPIOPinWrite(DEBUG_PORT, DEBUG_PIN_2, 0);
 #endif
 
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 			// Toggle Debug Pin 1 to test container cycle
 			if(false == TIMER_bTimer2Toggle)
 			{
@@ -208,7 +208,7 @@ void UART_IntHandler()
 		// Store Char in Buffer
 		ui8UART_RX_String[ui8UART_RX_Pointer_End] = UARTCharGetNonBlocking(UART0_BASE);
 
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Echo character
 		UARTCharPutNonBlocking(UART0_BASE, ui8UART_RX_String[ui8UART_RX_Pointer_End]);
 
@@ -262,7 +262,7 @@ bool SYS_Init(void)
 	// Right
 	STEP_Init(&stRight_Handle);
 
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 	// Disable Stepper Motor Driver
 	STEP_Disable();
 #endif
@@ -457,7 +457,7 @@ void UART_Comm()
 		// Prepare for next command
 		ui8UART_RX_Pointer_Start = ui8UART_RX_Pointer_End;
 		break;
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		// Command 1
 	case 0x31:
 		// Enable Right Stepper Motor
@@ -557,7 +557,7 @@ void UART_Comm()
 		break;
 #endif
 	default:
-#ifdef DEBUG_CB
+#ifdef DEBUG_CB_CONSOLE
 		UARTprintf("\nError: Command "" not recognized! Please try again\nCommand: ");
 #endif
 		// Prepare for next command
