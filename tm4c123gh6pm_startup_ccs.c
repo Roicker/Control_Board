@@ -41,9 +41,12 @@ static void IntDefaultHandler(void);
 //
 //*****************************************************************************
 extern void _c_int00(void);
-extern void UART_IntHandler(void);
+extern void COMM_IntHandler(void);
 extern void TIMER_IntHandler1(void);
 extern void TIMER_IntHandler2(void);
+extern void TIMER_IntHandler3(void);
+extern void TIMER_IntHandler4(void);
+extern void TIMER_IntHandler5(void);
 extern void DIST_IntHandler(void);
 extern void IMU_IntHandler(void);
 
@@ -93,7 +96,7 @@ void (* const g_pfnVectors[])(void) =
     DIST_IntHandler,                        // GPIO Port C
     DIST_IntHandler,                     	// GPIO Port D
     IMU_IntHandler,                 	    // GPIO Port E
-    UART_IntHandler,						// UART0 Rx and Tx
+    COMM_IntHandler,						// UART0 Rx and Tx
     IntDefaultHandler,                      // UART1 Rx and Tx
     IntDefaultHandler,                      // SSI0 Rx and Tx
     IntDefaultHandler,                      // I2C0 Master and Slave
@@ -123,7 +126,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // GPIO Port H
     IntDefaultHandler,                      // UART2 Rx and Tx
     IntDefaultHandler,                      // SSI1 Rx and Tx
-    IntDefaultHandler,                      // Timer 3 subtimer A
+    TIMER_IntHandler3,                      // Timer 3 subtimer A
     IntDefaultHandler,                      // Timer 3 subtimer B
     IntDefaultHandler,                      // I2C1 Master and Slave
     IntDefaultHandler,                      // Quadrature Encoder 1
@@ -158,7 +161,7 @@ void (* const g_pfnVectors[])(void) =
     0,                                      // Reserved
     IntDefaultHandler,                      // I2C2 Master and Slave
     IntDefaultHandler,                      // I2C3 Master and Slave
-    IntDefaultHandler,                      // Timer 4 subtimer A
+    TIMER_IntHandler4,                      // Timer 4 subtimer A
     IntDefaultHandler,                      // Timer 4 subtimer B
     0,                                      // Reserved
     0,                                      // Reserved
@@ -180,7 +183,7 @@ void (* const g_pfnVectors[])(void) =
     0,                                      // Reserved
     0,                                      // Reserved
     0,                                      // Reserved
-    IntDefaultHandler,                      // Timer 5 subtimer A
+    TIMER_IntHandler5,                      // Timer 5 subtimer A
     IntDefaultHandler,                      // Timer 5 subtimer B
     IntDefaultHandler,                      // Wide Timer 0 subtimer A
     IntDefaultHandler,                      // Wide Timer 0 subtimer B

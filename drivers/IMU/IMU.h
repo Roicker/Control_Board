@@ -61,5 +61,6 @@ float IMU_invSqrt(float x);
 void IMU_ComputeAngles(void);
 void IMU_CompensateSensorErrors(void);
 void IMU_SendSensorData(void);
+void IMU_Cycle(void);
 
 #endif /* IMU_H_ */

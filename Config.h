@@ -41,6 +41,8 @@
 #include "drivers/StepperMotor/STEP.h"
 #include "drivers/Distance/DIST.h"
 #include "drivers/Timer/TIMER.h"
+#include "drivers/Control/CTRL.h"
+#include "drivers/Communication/COMM.h"
 
 // Driverlib
 #include "driverlib/MPU9250/hw_mpu9250.h"
@@ -69,7 +71,7 @@
 #define INTOSCLK					16000000								// Internal Oscillator Frequency
 #define MS_CYCLE_COUNT				13320									// Amount of Cycles in a milisecond
 #define DELAY_MS(x)					SysCtlDelay(MS_CYCLE_COUNT*x)
-#define UART_RX_BUFFER_SIZE			50										// Amount of characters be stored in RX Buffer
+#define COMM_RX_BUFFER_SIZE			50										// Amount of characters be stored in RX Buffer
 #define CARRIAGE_RETURN				0x0D									// ASCII Value of Enter Key
 #define CYCLE_TIME					(float)0.0000000125						// Duration of 1 Clock cycle
 

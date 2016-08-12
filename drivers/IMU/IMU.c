@@ -218,7 +218,7 @@ void IMU_ProcessValues()
 
 	// Do AHRS Processing
 
-	// Update Quaternion values
+	// Update Quaternion values - without MAG because MAG Data is unreliable currently
 	//IMU_MadgwickAHRSupdate(stMPU9250_Values[ui8MPU9250_RBTail].GYRO.x, stMPU9250_Values[ui8MPU9250_RBTail].GYRO.y, stMPU9250_Values[ui8MPU9250_RBTail].GYRO.z, stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.x, stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.y, stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.z, stMPU9250_Values[ui8MPU9250_RBTail].MAG.x, stMPU9250_Values[ui8MPU9250_RBTail].MAG.y, stMPU9250_Values[ui8MPU9250_RBTail].MAG.z);
 	IMU_MadgwickAHRSupdateIMU(stMPU9250_Values[ui8MPU9250_RBTail].GYRO.x, stMPU9250_Values[ui8MPU9250_RBTail].GYRO.y, stMPU9250_Values[ui8MPU9250_RBTail].GYRO.z, stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.x, stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.y, stMPU9250_Values[ui8MPU9250_RBTail].ACCEL.z);
 
@@ -680,6 +680,23 @@ void IMU_ComputeAngles()
 	fex = atan2f(q0*q1 + q2*q3, 0.5f - q1*q1 - q2*q2);
 	fey = asinf(-2.0f * (q1*q3 - q0*q2));
 	fez = atan2f(q1*q2 + q0*q3, 0.5f - q2*q2 - q3*q3);
+}
+
+//*****************************************************************************
+//		IMU_Cycle
+// 		Function called every cycle to update orientation
+//*****************************************************************************
+
+void IMU_Cycle()
+{
+	if(ui8MPU9250_RBCount > 0)
+	{
+		// Get identifier of new element in ui8MPU9250_RBTail
+		MPU9250_RBRemoveElement();
+
+		// Obtain 9-DOF values from raw data
+		IMU_ProcessValues();
+	}
 }
 
 //*****************************************************************************
